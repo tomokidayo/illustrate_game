@@ -67,7 +67,7 @@ export const join = async (req: Request, res: Response): Promise<void> => {
  * ログインユーザーを指定ルームから退出させる
  * @route POST /api/rooms/:roomCode/leave
  * @param req.params.roomCode - 退出するルームコード
- * @returns 成功メッセージ（200）、ルーム未存在は 404
+ * @returns 成功メッセージ（200）、ルーム未存在は 404、ホストによる退出は 400
  */
 export const leave = async (req: Request, res: Response): Promise<void> => {
   const { rows: room } = await pool.query<Room>(
@@ -75,6 +75,9 @@ export const leave = async (req: Request, res: Response): Promise<void> => {
     [req.params.roomCode]
   );
   if (!room[0]) { res.status(404).json({ error: 'Room not found' }); return; }
+  if (room[0].host_user_id === req.user!.id) {
+    res.status(400).json({ error: 'Host cannot leave the room' }); return;
+  }
   await pool.query(
     'DELETE FROM room_players WHERE room_id = $1 AND user_id = $2',
     [room[0].id, req.user!.id]
