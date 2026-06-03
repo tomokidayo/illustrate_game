@@ -4,7 +4,15 @@ const pool = require('../db');
 
 exports.register = async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: 'username and password required' });
+  if (!username || !password) {
+    return res.status(400).json({ error: 'username and password required' });
+  }
+  if (username.length < 2 || username.length > 20) {
+    return res.status(400).json({ error: 'username must be 2–20 characters' });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'password must be at least 6 characters' });
+  }
 
   try {
     const password_hash = await bcrypt.hash(password, 10);
@@ -21,12 +29,20 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   const { username, password } = req.body;
+  if (!username || !password) {
+    return res.status(400).json({ error: 'username and password required' });
+  }
+
   const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
   const user = rows[0];
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
-  const token = jwt.sign({ id: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign(
+    { id: user.id, username: user.username },
+    process.env.JWT_SECRET,
+    { expiresIn: '7d' }
+  );
   res.json({ token, user: { id: user.id, username: user.username } });
 };
 
@@ -40,6 +56,9 @@ exports.logout = async (req, res) => {
 };
 
 exports.me = async (req, res) => {
-  const { rows } = await pool.query('SELECT id, username, created_at FROM users WHERE id = $1', [req.user.id]);
+  const { rows } = await pool.query(
+    'SELECT id, username, created_at FROM users WHERE id = $1',
+    [req.user.id]
+  );
   res.json(rows[0]);
 };
