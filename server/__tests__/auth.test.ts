@@ -1,6 +1,6 @@
-const request = require('supertest');
-const app = require('../app');
-const pool = require('../db');
+import request from 'supertest';
+import app from '../app';
+import pool from '../db';
 
 const TEST_USER = { username: 'testuser_auth', password: 'password123' };
 
@@ -93,11 +93,11 @@ describe('POST /api/auth/login', () => {
 // ─── GET /api/auth/me ────────────────────────────────────────────────────────
 
 describe('GET /api/auth/me', () => {
-  let token;
+  let token: string;
 
   beforeAll(async () => {
     const res = await request(app).post('/api/auth/login').send(TEST_USER);
-    token = res.body.token;
+    token = res.body.token as string;
   });
 
   test('正常取得', async () => {
@@ -125,11 +125,11 @@ describe('GET /api/auth/me', () => {
 // ─── POST /api/auth/logout ───────────────────────────────────────────────────
 
 describe('POST /api/auth/logout', () => {
-  let logoutToken;
+  let logoutToken: string;
 
   beforeAll(async () => {
     const res = await request(app).post('/api/auth/login').send(TEST_USER);
-    logoutToken = res.body.token;
+    logoutToken = res.body.token as string;
   });
 
   test('正常ログアウト', async () => {

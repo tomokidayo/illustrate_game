@@ -1,6 +1,6 @@
-const { randomBytes } = require('crypto');
+import { randomBytes } from 'crypto';
 
-function nanoid(size = 6) {
+export function nanoid(size = 6): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
   for (let i = 0; i < size; i++) {
@@ -8,5 +8,3 @@ function nanoid(size = 6) {
   }
   return result;
 }
-
-module.exports = { nanoid };

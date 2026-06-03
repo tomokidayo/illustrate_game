@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -6,10 +6,11 @@ import Register from '../pages/Register';
 import api from '../utils/api';
 
 vi.mock('../utils/api');
+const mockedPost = api.post as Mock;
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => ({
-  ...(await importOriginal()),
+  ...(await importOriginal<typeof import('react-router-dom')>()),
   useNavigate: () => mockNavigate,
 }));
 
@@ -37,7 +38,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.click(screen.getByRole('button', { name: '登録する' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ユーザー名とパスワードを入力してください');
-    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedPost).not.toHaveBeenCalled();
   });
 
   test('username が短すぎるとエラーが表示される', async () => {
@@ -65,7 +66,7 @@ describe('Register ページ', () => {
   });
 
   test('登録成功で /login にリダイレクト', async () => {
-    api.post.mockResolvedValueOnce({ data: {} });
+    mockedPost.mockResolvedValueOnce({ data: {} });
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'newuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
@@ -74,7 +75,8 @@ describe('Register ページ', () => {
   });
 
   test('API エラー時にエラーメッセージが表示される', async () => {
-    api.post.mockRejectedValueOnce({
+    mockedPost.mockRejectedValueOnce({
+      isAxiosError: true,
       response: { data: { error: 'Username already taken' } },
     });
     renderRegister();
@@ -85,7 +87,7 @@ describe('Register ページ', () => {
   });
 
   test('送信中はボタンが無効化される', async () => {
-    api.post.mockImplementationOnce(() => new Promise(() => {}));
+    mockedPost.mockImplementationOnce(() => new Promise(() => {}));
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'newuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
