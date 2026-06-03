@@ -226,19 +226,18 @@ describe('ゲーム進行', () => {
     expect(start1.turnTimeLeft).toBe(30);
 
     drawerUserId = start1.drawerId;
-    // 絵描き役にはお題が送られ、回答者にはお題が隠される
-    const drawerPayload = [p1, p2, p3].find((p) => (p as { drawerId: string }).drawerId === drawerUserId) as { topic?: string };
-    expect(typeof start1.topic === 'string' || start1.topic === undefined).toBe(true);
 
-    // 絵描き役のWSが受け取ったメッセージにtopicが含まれているか確認
-    const drawerWsIndex = [ws1, ws2, ws3].findIndex((_, i) =>
-      i === 0 ? tokens[0] : i === 1 ? tokens[1] : tokens[2]
-    );
-    // drawer（ws1がdrawerの場合）にはtopicが来る
-    if (drawerUserId === (await request(app).get('/api/auth/me').set('Authorization', `Bearer ${tokens[0]}`)).body.id) {
-      expect((p1 as { topic?: string }).topic).toBeDefined();
+    // 絵描き役には topic が届き、非絵描き役には undefined になることを全プレイヤーで検証
+    const allPayloads = [p1, p2, p3] as Array<{ topic?: string }>;
+    for (const [i, payload] of allPayloads.entries()) {
+      if (userIds[i] === drawerUserId) {
+        expect(payload.topic).toBeDefined();
+      } else {
+        expect(payload.topic).toBeUndefined();
+      }
     }
-    currentTopic = start1.topic as string ?? (p2 as { topic?: string }).topic as string ?? (p3 as { topic?: string }).topic as string;
+
+    currentTopic = allPayloads.find(p => p.topic !== undefined)!.topic as string;
   });
 
   test('不正解の回答はanswer:wrongとしてブロードキャストされる', async () => {

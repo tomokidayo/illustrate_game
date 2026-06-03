@@ -143,9 +143,10 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
     rooms.set(roomCode, room);
   }
 
-  // 再接続対応：同ユーザーの既存エントリを削除
+  // 再接続対応：既存エントリのスコアを引き継いで差し替え
+  const prev = room.players.find(p => p.userId === ws.user!.id);
   room.players = room.players.filter(p => p.userId !== ws.user!.id);
-  room.players.push({ userId: ws.user.id, username: ws.user.username, score: 0, ws });
+  room.players.push({ userId: ws.user.id, username: ws.user.username, score: prev?.score ?? 0, ws });
   wsToRoom.set(ws, roomCode);
   broadcastPlayersUpdated(room);
 }
