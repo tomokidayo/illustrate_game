@@ -1,3 +1,88 @@
+import { useState, FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { isAxiosError } from 'axios';
+import { useAuth } from '../context/AuthContext';
+import api from '../utils/api';
+
+/**
+ * ロビー画面コンポーネント
+ * @description ルームの作成・参加・ログアウトを行うページ
+ */
 export default function Lobby() {
-  return <div>Lobby（未実装）</div>;
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const [joinCode, setJoinCode] = useState('');
+  const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [joining, setJoining] = useState(false);
+
+  const handleCreate = async () => {
+    setError('');
+    setCreating(true);
+    try {
+      const { data } = await api.post<{ room_code: string }>('/api/rooms');
+      navigate(`/room/${data.room_code}`);
+    } catch (err) {
+      setError(isAxiosError(err) ? err.response?.data?.error ?? 'ルーム作成に失敗しました' : 'ルーム作成に失敗しました');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const handleJoin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const code = joinCode.trim().toUpperCase();
+    if (!code) { setError('ルームコードを入力してください'); return; }
+    setError('');
+    setJoining(true);
+    try {
+      await api.post(`/api/rooms/${code}/join`);
+      navigate(`/room/${code}`);
+    } catch (err) {
+      setError(isAxiosError(err) ? err.response?.data?.error ?? 'ルームへの参加に失敗しました' : 'ルームへの参加に失敗しました');
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  return (
+    <div>
+      <header>
+        <span>{user?.username}</span>
+        <button type="button" onClick={handleLogout}>ログアウト</button>
+      </header>
+      <main>
+        <h1>ロビー</h1>
+        {error && <p role="alert">{error}</p>}
+        <section>
+          <h2>ルームを作成</h2>
+          <button type="button" onClick={handleCreate} disabled={creating}>
+            {creating ? '作成中...' : 'ルームを作成'}
+          </button>
+        </section>
+        <section>
+          <h2>ルームに参加</h2>
+          <form onSubmit={handleJoin}>
+            <label htmlFor="joinCode">ルームコード</label>
+            <input
+              id="joinCode"
+              type="text"
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value)}
+              placeholder="XXXXXX"
+              maxLength={6}
+            />
+            <button type="submit" disabled={joining}>
+              {joining ? '参加中...' : '参加する'}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+  );
 }
