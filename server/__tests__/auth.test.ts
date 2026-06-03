@@ -12,7 +12,6 @@ beforeAll(async () => {
 afterAll(async () => {
   await pool.query('DELETE FROM token_blacklist');
   await pool.query('DELETE FROM users WHERE username = $1', [TEST_USER.username]);
-  await pool.end();
 });
 
 // ─── POST /api/auth/register ────────────────────────────────────────────────
