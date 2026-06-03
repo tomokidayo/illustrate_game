@@ -31,11 +31,10 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  const token = req.headers['authorization'].split(' ')[1];
-  const decoded = jwt.decode(token);
+  const decoded = jwt.decode(req.token);
   await pool.query(
     'INSERT INTO token_blacklist (token, expired_at) VALUES ($1, to_timestamp($2))',
-    [token, decoded.exp]
+    [req.token, decoded.exp]
   );
   res.json({ message: 'Logged out' });
 };

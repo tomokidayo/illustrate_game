@@ -16,6 +16,11 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({ error: 'Internal server error' });
+});
+
 initWsServer(server);
 
 const PORT = process.env.PORT || 3000;

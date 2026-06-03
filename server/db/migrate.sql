@@ -29,3 +29,5 @@ CREATE TABLE IF NOT EXISTS token_blacklist (
   expired_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_token_blacklist_token ON token_blacklist(token);

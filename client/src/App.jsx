@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Lobby from './pages/Lobby';
@@ -12,8 +13,8 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/lobby" element={<Lobby />} />
-          <Route path="/room/:roomCode" element={<Game />} />
+          <Route path="/lobby" element={<ProtectedRoute><Lobby /></ProtectedRoute>} />
+          <Route path="/room/:roomCode" element={<ProtectedRoute><Game /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
