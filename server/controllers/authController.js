@@ -10,6 +10,9 @@ exports.register = async (req, res) => {
   if (username.length < 2 || username.length > 20) {
     return res.status(400).json({ error: 'username must be 2–20 characters' });
   }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+    return res.status(400).json({ error: 'username must be alphanumeric' });
+  }
   if (password.length < 6) {
     return res.status(400).json({ error: 'password must be at least 6 characters' });
   }

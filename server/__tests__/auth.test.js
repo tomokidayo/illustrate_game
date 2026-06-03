@@ -4,9 +4,6 @@ const pool = require('../db');
 
 const TEST_USER = { username: 'testuser_auth', password: 'password123' };
 
-// ファイル全体で共有するトークン（GET /me 用）
-let sharedToken;
-
 beforeAll(async () => {
   await pool.query('DELETE FROM token_blacklist');
   await pool.query('DELETE FROM users WHERE username = $1', [TEST_USER.username]);
@@ -59,6 +56,12 @@ describe('POST /api/auth/register', () => {
     const res = await request(app).post('/api/auth/register').send({ username: 'newuser2', password: '123' });
     expect(res.status).toBe(400);
   });
+
+  test('username不正文字は400', async () => {
+    const res = await request(app).post('/api/auth/register').send({ username: 'user name!', password: 'pass123' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('username must be alphanumeric');
+  });
 });
 
 // ─── POST /api/auth/login ────────────────────────────────────────────────────
@@ -69,8 +72,6 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('token');
     expect(res.body.user.username).toBe(TEST_USER.username);
-    // 後続テスト用に保持
-    sharedToken = res.body.token;
   });
 
   test('存在しないユーザーは401', async () => {
@@ -92,10 +93,17 @@ describe('POST /api/auth/login', () => {
 // ─── GET /api/auth/me ────────────────────────────────────────────────────────
 
 describe('GET /api/auth/me', () => {
+  let token;
+
+  beforeAll(async () => {
+    const res = await request(app).post('/api/auth/login').send(TEST_USER);
+    token = res.body.token;
+  });
+
   test('正常取得', async () => {
     const res = await request(app)
       .get('/api/auth/me')
-      .set('Authorization', `Bearer ${sharedToken}`);
+      .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body.username).toBe(TEST_USER.username);
     expect(res.body).not.toHaveProperty('password_hash');
@@ -120,7 +128,6 @@ describe('POST /api/auth/logout', () => {
   let logoutToken;
 
   beforeAll(async () => {
-    // logout専用の新規トークンを取得（sharedTokenを汚染しない）
     const res = await request(app).post('/api/auth/login').send(TEST_USER);
     logoutToken = res.body.token;
   });
@@ -136,6 +143,14 @@ describe('POST /api/auth/logout', () => {
   test('ログアウト済みトークンは401', async () => {
     const res = await request(app)
       .post('/api/auth/logout')
+      .set('Authorization', `Bearer ${logoutToken}`);
+    expect(res.status).toBe(401);
+    expect(res.body.error).toBe('Token revoked');
+  });
+
+  test('ログアウト済みトークンで /me は401', async () => {
+    const res = await request(app)
+      .get('/api/auth/me')
       .set('Authorization', `Bearer ${logoutToken}`);
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('Token revoked');
