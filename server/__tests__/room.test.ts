@@ -54,7 +54,6 @@ afterAll(async () => {
     [ALL_NAMES]
   );
   await pool.query(`DELETE FROM users WHERE username = ANY($1::text[])`, [ALL_NAMES]);
-  await pool.end();
 });
 
 // ─── POST /api/rooms ─────────────────────────────────────────────────────────
