@@ -23,8 +23,8 @@
 
 | レイヤー | 技術 |
 |---|---|
-| フロントエンド | React + Vite |
-| バックエンド | Node.js + Express |
+| フロントエンド | React + Vite + TypeScript |
+| バックエンド | Node.js + Express + TypeScript |
 | リアルタイム通信 | WebSocket（`ws`ライブラリ） |
 | データベース | PostgreSQL |
 | 認証 | JWT |

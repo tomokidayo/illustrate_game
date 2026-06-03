@@ -1,4 +1,4 @@
-import { describe, test, expect, vi, beforeEach } from 'vitest';
+import { describe, test, expect, vi, beforeEach, Mock } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -7,10 +7,11 @@ import { AuthProvider } from '../context/AuthContext';
 import api from '../utils/api';
 
 vi.mock('../utils/api');
+const mockedPost = api.post as Mock;
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => ({
-  ...(await importOriginal()),
+  ...(await importOriginal<typeof import('react-router-dom')>()),
   useNavigate: () => mockNavigate,
 }));
 
@@ -41,11 +42,11 @@ describe('Login ページ', () => {
     renderLogin();
     await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ユーザー名とパスワードを入力してください');
-    expect(api.post).not.toHaveBeenCalled();
+    expect(mockedPost).not.toHaveBeenCalled();
   });
 
   test('ログイン成功で /lobby にリダイレクト', async () => {
-    api.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       data: { token: 'test-token', user: { id: '1', username: 'testuser' } },
     });
     renderLogin();
@@ -56,7 +57,7 @@ describe('Login ページ', () => {
   });
 
   test('ログイン成功でトークンが localStorage に保存される', async () => {
-    api.post.mockResolvedValueOnce({
+    mockedPost.mockResolvedValueOnce({
       data: { token: 'test-token', user: { id: '1', username: 'testuser' } },
     });
     renderLogin();
@@ -67,7 +68,8 @@ describe('Login ページ', () => {
   });
 
   test('API エラー時にエラーメッセージが表示される', async () => {
-    api.post.mockRejectedValueOnce({
+    mockedPost.mockRejectedValueOnce({
+      isAxiosError: true,
       response: { data: { error: 'Invalid credentials' } },
     });
     renderLogin();
@@ -78,7 +80,7 @@ describe('Login ページ', () => {
   });
 
   test('送信中はボタンが無効化される', async () => {
-    api.post.mockImplementationOnce(() => new Promise(() => {}));
+    mockedPost.mockImplementationOnce(() => new Promise(() => {}));
     renderLogin();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'testuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');

@@ -1,6 +1,8 @@
-const http = require('http');
-const app = require('./app');
-const { initWsServer } = require('./websocket/wsServer');
+import http from 'http';
+import app from './app';
+import { initWsServer } from './websocket/wsServer';
+
+if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET is not set');
 
 const server = http.createServer(app);
 initWsServer(server);

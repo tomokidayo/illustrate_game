@@ -1,6 +1,6 @@
-const topics = [
+const topics: string[] = [
   'りんご', 'バナナ', '犬', '猫', '車', '自転車', '家', '木', '花', '魚',
   'ピザ', 'ケーキ', '傘', '眼鏡', '時計', '電話', '飛行機', '船', '山', '川',
 ];
 
-module.exports = topics;
+export default topics;
