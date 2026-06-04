@@ -1,0 +1,11 @@
+{
+  "name": "illust-game",
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "heroku-postbuild": "cd client && npm install --include=dev && npm run build && cd ../server && npm install --include=dev && npm run build",
+    "start": "node server/dist/index.js"
+  }
+}
