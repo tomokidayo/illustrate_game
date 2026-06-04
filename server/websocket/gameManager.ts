@@ -78,12 +78,14 @@ async function saveGameHistory(
       'INSERT INTO game_histories (room_id, room_code) VALUES ($1, $2) RETURNING id',
       [room.roomId, room.roomCode]
     );
-    for (const [i, player] of sorted.entries()) {
-      await pool.query(
-        'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
-        [history.id, player.userId, player.username, player.score, i + 1]
-      );
-    }
+    await Promise.all(
+      sorted.map((player, i) =>
+        pool.query(
+          'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
+          [history.id, player.userId, player.username, player.score, i + 1]
+        )
+      )
+    );
   } catch (err) {
     console.error('Failed to save game history:', err);
   }

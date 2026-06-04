@@ -30,7 +30,7 @@ export default function Lobby() {
   useEffect(() => {
     api.get<GameHistoryEntry[]>('/api/game-histories')
       .then(res => setHistories(res.data))
-      .catch(() => {});
+      .catch(err => console.error('Failed to fetch game histories:', err));
   }, []);
 
   const handleCreate = async () => {

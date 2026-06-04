@@ -122,13 +122,17 @@ describe('待機フェーズ', () => {
 // ─── プレイフェーズ ───────────────────────────────────────────────────────────
 
 describe('プレイフェーズ', () => {
-  const playingBase = buildGame({
-    gameStatus: 'playing',
-    players: [
-      { userId: 'user-1', username: 'testuser', score: 0 },
-      { userId: 'user-2', username: 'player2', score: 1 },
-    ],
-    turn: { drawerId: 'user-2', drawerName: 'player2', turnTimeLeft: 25, gameTimeLeft: 280 },
+  let playingBase: UseGameReturn;
+
+  beforeEach(() => {
+    playingBase = buildGame({
+      gameStatus: 'playing',
+      players: [
+        { userId: 'user-1', username: 'testuser', score: 0 },
+        { userId: 'user-2', username: 'player2', score: 1 },
+      ],
+      turn: { drawerId: 'user-2', drawerName: 'player2', turnTimeLeft: 25, gameTimeLeft: 280 },
+    });
   });
 
   test('Canvas・Scoreboard・Chat が表示される', () => {

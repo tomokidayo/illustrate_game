@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS game_histories (
 CREATE TABLE IF NOT EXISTS game_scores (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   game_id UUID REFERENCES game_histories(id) ON DELETE CASCADE,
+  -- ユーザー削除後も履歴データを保持するため CASCADE ではなく SET NULL
   user_id UUID REFERENCES users(id) ON DELETE SET NULL,
   username VARCHAR(50) NOT NULL,
   score INTEGER NOT NULL DEFAULT 0,
