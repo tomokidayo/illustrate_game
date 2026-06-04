@@ -6,6 +6,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import authRoutes from './routes/auth';
 import roomRoutes from './routes/room';
+import gameHistoryRoutes from './routes/gameHistory';
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
+app.use('/api/game-histories', gameHistoryRoutes);
 
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
