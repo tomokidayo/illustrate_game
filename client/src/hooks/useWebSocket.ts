@@ -12,14 +12,17 @@ export type WsMessageHandler = (type: string, payload: Record<string, unknown>) 
 /**
  * WebSocket接続を管理するフック
  * @param onMessage - メッセージ受信時に呼び出されるコールバック（refで保持するためstaleにならない）
+ * @param onOpen - 接続確立（readyState === OPEN）時に呼び出されるコールバック
  * @returns `send` 関数
  */
-export function useWebSocket(onMessage: WsMessageHandler) {
+export function useWebSocket(onMessage: WsMessageHandler, onOpen?: () => void) {
   const wsRef = useRef<WebSocket | null>(null);
   const handlerRef = useRef<WsMessageHandler>(onMessage);
+  const onOpenRef = useRef(onOpen);
 
   useEffect(() => {
     handlerRef.current = onMessage;
+    onOpenRef.current = onOpen;
   });
 
   useEffect(() => {
@@ -28,6 +31,10 @@ export function useWebSocket(onMessage: WsMessageHandler) {
     const token = localStorage.getItem('token') ?? '';
     const ws = new WebSocket(`${wsUrl}?token=${encodeURIComponent(token)}`);
     wsRef.current = ws;
+
+    ws.onopen = () => {
+      onOpenRef.current?.();
+    };
 
     ws.onmessage = (event: MessageEvent) => {
       try {

@@ -97,7 +97,7 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
       case 'room:players_updated': {
         const ps = payload.players as Player[];
         setPlayers(ps);
-        if (gameStatus === 'connecting') setGameStatus('waiting');
+        setGameStatus(prev => prev === 'connecting' ? 'waiting' : prev);
         break;
       }
 
@@ -173,17 +173,11 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         break;
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addMessage, roomCode]);
 
-  const { send } = useWebSocket(handleMessage);
-
-  useEffect(() => {
+  const { send } = useWebSocket(handleMessage, () => {
     send('room:join', { roomCode });
-    setGameStatus('waiting');
-  // run once on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomCode]);
+  });
 
   useEffect(() => {
     api.get<{ host_user_id: string }>(`/api/rooms/${roomCode}`)

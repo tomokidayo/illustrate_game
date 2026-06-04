@@ -33,16 +33,7 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
   const color = '#222222';
   const lineWidth = 3;
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-  }, []);
-
-  // clearSignal が変わるたびキャンバスをリセットする
+  // clearSignal が変わるたびキャンバスをリセットする（mount 時の clearSignal=0 でも発火し初期化を兼ねる）
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
