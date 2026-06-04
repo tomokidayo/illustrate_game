@@ -1,8 +1,18 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+
+/** ゲーム履歴の1件分 */
+interface GameHistoryEntry {
+  id: string;
+  room_code: string;
+  played_at: string;
+  score: number;
+  rank: number;
+  player_count: number;
+}
 
 /**
  * ロビー画面コンポーネント
@@ -15,6 +25,13 @@ export default function Lobby() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [histories, setHistories] = useState<GameHistoryEntry[]>([]);
+
+  useEffect(() => {
+    api.get<GameHistoryEntry[]>('/api/game-histories')
+      .then(res => setHistories(res.data))
+      .catch(() => {});
+  }, []);
 
   const handleCreate = async () => {
     setError('');
@@ -81,6 +98,23 @@ export default function Lobby() {
               {joining ? '参加中...' : '参加する'}
             </button>
           </form>
+        </section>
+        <section>
+          <h2>最近のゲーム</h2>
+          {histories.length === 0 ? (
+            <p>まだゲームの記録がありません</p>
+          ) : (
+            <ul>
+              {histories.map(h => (
+                <li key={h.id}>
+                  <span>{h.room_code}</span>
+                  <span>{h.rank}位 / {h.player_count}人中</span>
+                  <span>{h.score}pt</span>
+                  <span>{new Date(h.played_at).toLocaleDateString('ja-JP')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
     </div>
