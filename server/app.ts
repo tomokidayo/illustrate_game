@@ -20,6 +20,15 @@ app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/game-histories', gameHistoryRoutes);
 
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = path.join(__dirname, '../../client/dist');
+  app.use(express.static(clientDist));
+  // Express 5 では app.get('*') が使えないため app.use() でSPAフォールバックを実装
+  app.use((_req: Request, res: Response) => {
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
+
 app.use((err: Error, req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
