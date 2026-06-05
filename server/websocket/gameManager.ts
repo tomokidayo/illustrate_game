@@ -63,12 +63,41 @@ function clearRoomTimers(room: RoomState): void {
   if (room.tickInterval) { clearInterval(room.tickInterval); room.tickInterval = null; }
 }
 
+/**
+ * ゲーム終了スコアをDBに永続化する
+ * @param room - 対象ルーム
+ * @param scores - 全プレイヤーのスコア一覧
+ */
+async function saveGameHistory(
+  room: RoomState,
+  scores: Array<{ userId: string; username: string; score: number }>
+): Promise<void> {
+  try {
+    const sorted = [...scores].sort((a, b) => b.score - a.score);
+    const { rows: [history] } = await pool.query<{ id: string }>(
+      'INSERT INTO game_histories (room_id, room_code) VALUES ($1, $2) RETURNING id',
+      [room.roomId, room.roomCode]
+    );
+    await Promise.all(
+      sorted.map((player, i) =>
+        pool.query(
+          'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
+          [history.id, player.userId, player.username, player.score, i + 1]
+        )
+      )
+    );
+  } catch (err) {
+    console.error('Failed to save game history:', err);
+  }
+}
+
 /** ゲームを終了しDB・全員に通知する */
 function endGame(room: RoomState): void {
   clearRoomTimers(room);
   room.status = 'finished';
-  void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
   const scores = room.players.map(({ userId, username, score }) => ({ userId, username, score }));
+  void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
+  void saveGameHistory(room, scores);
   broadcast(room, 'game:end', { players: scores });
 }
 

@@ -24,33 +24,15 @@ export default function Timer({ turnTimeLeft, gameTimeLeft }: TimerProps) {
   const isUrgent = turnTimeLeft <= 10;
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 20,
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-        <span style={{ fontSize: 13, color: 'var(--text)' }}>残り</span>
-        <span
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            fontVariantNumeric: 'tabular-nums',
-            color: isUrgent ? '#dc2626' : 'var(--text-h)',
-            minWidth: 48,
-            display: 'inline-block',
-            textAlign: 'center',
-          }}
-        >
+    <div className="timer">
+      <div className="timer-turn">
+        <span className="timer-turn-label">残り</span>
+        <span className={`timer-turn-num${isUrgent ? ' timer-turn-num--urgent' : ''}`}>
           {turnTimeLeft}
         </span>
-        <span style={{ fontSize: 13, color: 'var(--text)' }}>秒</span>
+        <span className="timer-turn-label">秒</span>
       </div>
-      <div style={{ fontSize: 13, color: 'var(--text)' }}>
-        ゲーム残り：{formatSeconds(gameTimeLeft)}
-      </div>
+      <div className="timer-game">ゲーム {formatSeconds(gameTimeLeft)}</div>
     </div>
   );
 }

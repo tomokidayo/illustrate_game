@@ -7,6 +7,7 @@ import api from '../utils/api';
 
 vi.mock('../utils/api');
 const mockedPost = api.post as Mock;
+const mockedGet = api.get as Mock;
 
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async (importOriginal) => ({
@@ -29,6 +30,7 @@ function renderLobby() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockedGet.mockResolvedValue({ data: [] });
 });
 
 describe('Lobby ページ', () => {
@@ -121,5 +123,35 @@ describe('Lobby ページ', () => {
       expect(mockLogout).toHaveBeenCalled();
       expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
+  });
+
+  // --- ゲーム履歴 ---
+
+  test('「最近のゲーム」セクションが表示される', () => {
+    renderLobby();
+    expect(screen.getByText(/最近のゲーム/)).toBeInTheDocument();
+  });
+
+  test('履歴が空のとき「まだゲームの記録がありません」と表示される', async () => {
+    mockedGet.mockResolvedValueOnce({ data: [] });
+    renderLobby();
+    await waitFor(() => expect(screen.getByText('まだゲームの記録がありません')).toBeInTheDocument());
+  });
+
+  test('履歴があるときルームコード・順位・スコアが表示される', async () => {
+    mockedGet.mockResolvedValueOnce({
+      data: [{
+        id: 'game-1',
+        room_code: 'ABCDEF',
+        played_at: '2026-06-05T10:00:00Z',
+        score: 3,
+        rank: 1,
+        player_count: 4,
+      }],
+    });
+    renderLobby();
+    await waitFor(() => expect(screen.getByText('ABCDEF')).toBeInTheDocument());
+    expect(screen.getByText(/1位/)).toBeInTheDocument();
+    expect(screen.getByText(/3pt/)).toBeInTheDocument();
   });
 });

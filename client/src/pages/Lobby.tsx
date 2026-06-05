@@ -1,8 +1,18 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
+
+/** ゲーム履歴の1件分 */
+interface GameHistoryEntry {
+  id: string;
+  room_code: string;
+  played_at: string;
+  score: number;
+  rank: number;
+  player_count: number;
+}
 
 /**
  * ロビー画面コンポーネント
@@ -15,6 +25,13 @@ export default function Lobby() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [histories, setHistories] = useState<GameHistoryEntry[]>([]);
+
+  useEffect(() => {
+    api.get<GameHistoryEntry[]>('/api/game-histories')
+      .then(res => setHistories(res.data))
+      .catch(err => console.error('Failed to fetch game histories:', err));
+  }, []);
 
   const handleCreate = async () => {
     setError('');
@@ -51,37 +68,62 @@ export default function Lobby() {
   };
 
   return (
-    <div>
-      <header>
-        <span>{user?.username}</span>
-        <button type="button" onClick={handleLogout}>ログアウト</button>
+    <div className="lobby-layout">
+      <header className="lobby-header">
+        <div className="lobby-header-logo">🌲 お絵描きの森</div>
+        <div className="lobby-header-user">
+          <span>{user?.username}</span>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
+        </div>
       </header>
-      <main>
-        <h1>ロビー</h1>
-        {error && <p role="alert">{error}</p>}
-        <section>
-          <h2>ルームを作成</h2>
-          <button type="button" onClick={handleCreate} disabled={creating}>
-            {creating ? '作成中...' : 'ルームを作成'}
-          </button>
-        </section>
-        <section>
-          <h2>ルームに参加</h2>
-          <form onSubmit={handleJoin}>
-            <label htmlFor="joinCode">ルームコード</label>
-            <input
-              id="joinCode"
-              type="text"
-              value={joinCode}
-              onChange={e => setJoinCode(e.target.value)}
-              placeholder="XXXXXX"
-              maxLength={6}
-            />
-            <button type="submit" disabled={joining}>
-              {joining ? '参加中...' : '参加する'}
+      <main className="lobby-main">
+        {error && <p className="error-msg" role="alert">{error}</p>}
+        <div className="lobby-grid">
+          <div className="lobby-card">
+            <div className="lobby-card-title">🎨 ルームを作成</div>
+            <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。</p>
+            <button className="btn btn-primary" type="button" onClick={handleCreate} disabled={creating}>
+              {creating ? '作成中...' : 'ルームを作成'}
             </button>
-          </form>
-        </section>
+          </div>
+          <div className="lobby-card">
+            <div className="lobby-card-title">🚪 ルームに参加</div>
+            <form className="lobby-join-form" onSubmit={handleJoin}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="joinCode">ルームコード</label>
+                <input
+                  className="form-input"
+                  id="joinCode"
+                  type="text"
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value)}
+                  placeholder="XXXXXX"
+                  maxLength={6}
+                />
+              </div>
+              <button className="btn btn-primary" type="submit" disabled={joining}>
+                {joining ? '参加中...' : '参加する'}
+              </button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div className="lobby-section-title">📋 最近のゲーム</div>
+          {histories.length === 0 ? (
+            <p className="empty-msg">まだゲームの記録がありません</p>
+          ) : (
+            <ul className="history-list">
+              {histories.map(h => (
+                <li className="history-item" key={h.id}>
+                  <span className="history-code">{h.room_code}</span>
+                  <span className="history-rank">{h.rank}位 / {h.player_count}人中</span>
+                  <span className="history-score">{h.score}pt</span>
+                  <span className="history-date">{new Date(h.played_at).toLocaleDateString('ja-JP')}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </main>
     </div>
   );
