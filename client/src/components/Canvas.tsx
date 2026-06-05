@@ -107,8 +107,6 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
     if (!isDrawer) return;
     isPenDownRef.current = true;
     const { x, y } = getCanvasPos(e.clientX, e.clientY);
-    lastXRef.current = x;
-    lastYRef.current = y;
     onDraw({ x, y, dragging: false, color, width: lineWidth });
   }
 
@@ -116,8 +114,6 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
     if (!isDrawer || !isPenDownRef.current) return;
     const { x, y } = getCanvasPos(e.clientX, e.clientY);
     onDraw({ x, y, dragging: true, color, width: lineWidth });
-    lastXRef.current = x;
-    lastYRef.current = y;
   }
 
   function handleMouseUp() { isPenDownRef.current = false; }
@@ -129,8 +125,6 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
     isPenDownRef.current = true;
     const touch = e.touches[0];
     const { x, y } = getCanvasPos(touch.clientX, touch.clientY);
-    lastXRef.current = x;
-    lastYRef.current = y;
     onDraw({ x, y, dragging: false, color, width: lineWidth });
   }
 
@@ -140,8 +134,6 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
     const touch = e.touches[0];
     const { x, y } = getCanvasPos(touch.clientX, touch.clientY);
     onDraw({ x, y, dragging: true, color, width: lineWidth });
-    lastXRef.current = x;
-    lastYRef.current = y;
   }
 
   function handleTouchEnd() { isPenDownRef.current = false; }
