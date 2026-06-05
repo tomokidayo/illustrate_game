@@ -42,6 +42,21 @@ export default function Canvas({ isDrawer, drawQueueRef, clearSignal, onDraw, on
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }, [clearSignal]);
 
+  // Safari は React の合成タッチイベントを passive 扱いにするため
+  // e.preventDefault() が無視されスクロール判定で再描画が遅延する。
+  // ネイティブリスナーで non-passive を明示し、これを防ぐ。
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !isDrawer) return;
+    const prevent = (e: Event) => e.preventDefault();
+    canvas.addEventListener('touchstart', prevent, { passive: false });
+    canvas.addEventListener('touchmove', prevent, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', prevent);
+      canvas.removeEventListener('touchmove', prevent);
+    };
+  }, [isDrawer]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
