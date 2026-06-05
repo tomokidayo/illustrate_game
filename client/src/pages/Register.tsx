@@ -39,37 +39,31 @@ export default function Register() {
   };
 
   return (
-    <div>
-      <h1>新規登録</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="username">ユーザー名</label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            value={form.username}
-            onChange={handleChange}
-            autoComplete="username"
-          />
-        </div>
-        <div>
-          <label htmlFor="password">パスワード</label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            autoComplete="new-password"
-          />
-        </div>
-        {error && <p role="alert">{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? '登録中...' : '登録する'}
-        </button>
-      </form>
-      <p>すでにアカウントをお持ちの方は<Link to="/login">ログイン</Link></p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <div className="auth-logo">🌲</div>
+        <h1 className="auth-title">お絵描きの森</h1>
+        <p className="auth-subtitle">新規アカウントを作成</p>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label" htmlFor="username">ユーザー名</label>
+            <input className="form-input" id="username" name="username" type="text"
+              value={form.username} onChange={handleChange} autoComplete="username" placeholder="2〜20文字・英数字" />
+          </div>
+          <div className="form-group">
+            <label className="form-label" htmlFor="password">パスワード</label>
+            <input className="form-input" id="password" name="password" type="password"
+              value={form.password} onChange={handleChange} autoComplete="new-password" placeholder="6文字以上" />
+          </div>
+          {error && <p className="error-msg" role="alert">{error}</p>}
+          <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
+            {loading ? '登録中...' : '登録する'}
+          </button>
+        </form>
+        <p className="auth-footer">
+          すでにアカウントをお持ちの方は <Link to="/login">ログイン</Link>
+        </p>
+      </div>
     </div>
   );
 }

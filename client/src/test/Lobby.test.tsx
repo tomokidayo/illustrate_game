@@ -129,7 +129,7 @@ describe('Lobby ページ', () => {
 
   test('「最近のゲーム」セクションが表示される', () => {
     renderLobby();
-    expect(screen.getByText('最近のゲーム')).toBeInTheDocument();
+    expect(screen.getByText(/最近のゲーム/)).toBeInTheDocument();
   });
 
   test('履歴が空のとき「まだゲームの記録がありません」と表示される', async () => {

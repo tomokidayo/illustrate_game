@@ -68,54 +68,62 @@ export default function Lobby() {
   };
 
   return (
-    <div>
-      <header>
-        <span>{user?.username}</span>
-        <button type="button" onClick={handleLogout}>ログアウト</button>
+    <div className="lobby-layout">
+      <header className="lobby-header">
+        <div className="lobby-header-logo">🌲 お絵描きの森</div>
+        <div className="lobby-header-user">
+          <span>{user?.username}</span>
+          <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
+        </div>
       </header>
-      <main>
-        <h1>ロビー</h1>
-        {error && <p role="alert">{error}</p>}
-        <section>
-          <h2>ルームを作成</h2>
-          <button type="button" onClick={handleCreate} disabled={creating}>
-            {creating ? '作成中...' : 'ルームを作成'}
-          </button>
-        </section>
-        <section>
-          <h2>ルームに参加</h2>
-          <form onSubmit={handleJoin}>
-            <label htmlFor="joinCode">ルームコード</label>
-            <input
-              id="joinCode"
-              type="text"
-              value={joinCode}
-              onChange={e => setJoinCode(e.target.value)}
-              placeholder="XXXXXX"
-              maxLength={6}
-            />
-            <button type="submit" disabled={joining}>
-              {joining ? '参加中...' : '参加する'}
+      <main className="lobby-main">
+        {error && <p className="error-msg" role="alert">{error}</p>}
+        <div className="lobby-grid">
+          <div className="lobby-card">
+            <div className="lobby-card-title">🎨 ルームを作成</div>
+            <p style={{ fontSize: 14, color: 'var(--text)' }}>新しいゲームルームを作成して、友達を招待しましょう。</p>
+            <button className="btn btn-primary" type="button" onClick={handleCreate} disabled={creating}>
+              {creating ? '作成中...' : 'ルームを作成'}
             </button>
-          </form>
-        </section>
-        <section>
-          <h2>最近のゲーム</h2>
+          </div>
+          <div className="lobby-card">
+            <div className="lobby-card-title">🚪 ルームに参加</div>
+            <form className="lobby-join-form" onSubmit={handleJoin}>
+              <div className="form-group">
+                <label className="form-label" htmlFor="joinCode">ルームコード</label>
+                <input
+                  className="form-input"
+                  id="joinCode"
+                  type="text"
+                  value={joinCode}
+                  onChange={e => setJoinCode(e.target.value)}
+                  placeholder="XXXXXX"
+                  maxLength={6}
+                />
+              </div>
+              <button className="btn btn-primary" type="submit" disabled={joining}>
+                {joining ? '参加中...' : '参加する'}
+              </button>
+            </form>
+          </div>
+        </div>
+        <div>
+          <div className="lobby-section-title">📋 最近のゲーム</div>
           {histories.length === 0 ? (
-            <p>まだゲームの記録がありません</p>
+            <p className="empty-msg">まだゲームの記録がありません</p>
           ) : (
-            <ul>
+            <ul className="history-list">
               {histories.map(h => (
-                <li key={h.id}>
-                  <span>{h.room_code}</span>
-                  <span>{h.rank}位 / {h.player_count}人中</span>
-                  <span>{h.score}pt</span>
-                  <span>{new Date(h.played_at).toLocaleDateString('ja-JP')}</span>
+                <li className="history-item" key={h.id}>
+                  <span className="history-code">{h.room_code}</span>
+                  <span className="history-rank">{h.rank}位 / {h.player_count}人中</span>
+                  <span className="history-score">{h.score}pt</span>
+                  <span className="history-date">{new Date(h.played_at).toLocaleDateString('ja-JP')}</span>
                 </li>
               ))}
             </ul>
           )}
-        </section>
+        </div>
       </main>
     </div>
   );
