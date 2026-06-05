@@ -81,7 +81,7 @@ export default function Lobby() {
         <div className="lobby-grid">
           <div className="lobby-card">
             <div className="lobby-card-title">🎨 ルームを作成</div>
-            <p style={{ fontSize: 14, color: 'var(--text)' }}>新しいゲームルームを作成して、友達を招待しましょう。</p>
+            <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。</p>
             <button className="btn btn-primary" type="button" onClick={handleCreate} disabled={creating}>
               {creating ? '作成中...' : 'ルームを作成'}
             </button>

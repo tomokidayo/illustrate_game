@@ -260,6 +260,10 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 8px;
 }
+.lobby-card-desc {
+  font-size: 14px;
+  color: var(--text);
+}
 
 .lobby-join-form { display: flex; flex-direction: column; gap: 10px; }
 
@@ -382,14 +386,13 @@ a:hover { text-decoration: underline; }
 
 /* Mobile: stack vertically */
 @media (max-width: 640px) {
-  .game-layout { height: 100svh; }
   .game-main { flex-direction: column; overflow: hidden; }
   .game-canvas-area {
     flex: 0 0 auto;
     padding: 8px;
     justify-content: center;
     align-items: center;
-    background: #f0f0f0;
+    background: var(--bg-subtle);
   }
   .game-sidebar {
     width: 100%;
