@@ -26,8 +26,10 @@ export function useWebSocket(onMessage: WsMessageHandler, onOpen?: () => void) {
   });
 
   useEffect(() => {
-    const base = import.meta.env.VITE_API_URL as string;
-    const wsUrl = base.replace(/^http/, 'ws');
+    const base = (import.meta.env.VITE_API_URL as string) || '';
+    const wsUrl = base
+      ? base.replace(/^http/, 'ws')
+      : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
     const token = localStorage.getItem('token') ?? '';
     const ws = new WebSocket(`${wsUrl}?token=${encodeURIComponent(token)}`);
     wsRef.current = ws;
