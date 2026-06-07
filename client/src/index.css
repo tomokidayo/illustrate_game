@@ -115,7 +115,7 @@ a:hover { text-decoration: underline; }
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--text-h);
   background: var(--bg);
   outline: none;
@@ -316,6 +316,9 @@ a:hover { text-decoration: underline; }
   flex-direction: column;
   height: 100svh;
   overflow: hidden;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .game-header {
@@ -520,7 +523,7 @@ a:hover { text-decoration: underline; }
   padding: 8px 10px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-h);
   background: var(--bg);
   outline: none;
