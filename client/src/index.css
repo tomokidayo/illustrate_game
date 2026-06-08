@@ -566,8 +566,9 @@ a:hover { text-decoration: underline; }
 }
 
 @media (max-width: 640px) {
+  .timer { flex-direction: column; gap: 2px; align-items: center; }
   .timer-turn-num { font-size: 22px; min-width: 36px; }
-  .timer-game { display: none; }
+  .timer-game { font-size: 11px; }
 }
 
 /* ── Waiting phase ────────────────────────────────────────────── */
