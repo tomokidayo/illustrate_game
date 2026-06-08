@@ -403,6 +403,13 @@ a:hover { text-decoration: underline; }
     border-left: none;
     border-top: 1px solid var(--border);
     min-height: 0;
+    flex-direction: column-reverse; /* Scoreboard を下、Chat を上に */
+  }
+  /* フォームをキャンバス直下（Chat 内の先頭）に引き上げる */
+  .chat-form {
+    order: -1;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
   }
 }
 
