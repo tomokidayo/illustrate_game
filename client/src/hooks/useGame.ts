@@ -3,7 +3,7 @@ import { useWebSocket } from './useWebSocket';
 import api from '../utils/api';
 
 /** ゲームの進行状態 */
-export type GameStatus = 'connecting' | 'waiting' | 'playing' | 'finished';
+export type GameStatus = 'connecting' | 'waiting' | 'playing' | 'finished' | 'aborted';
 
 /** プレイヤー情報 */
 export interface Player {
@@ -65,6 +65,10 @@ export interface UseGameReturn {
   submitAnswer: (answer: string) => void;
   sendDraw: (data: Omit<DrawData, 'roomCode'>) => void;
   sendClear: () => void;
+  /** ゲームを中断しサーバーに通知する */
+  sendAbort: () => void;
+  /** 中断したプレイヤーのユーザー名（game:abort 受信時にセット） */
+  abortedBy: string | null;
 }
 
 let messageCounter = 0;
@@ -85,6 +89,7 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   const [turnEndInfo, setTurnEndInfo] = useState<TurnEndInfo | null>(null);
   const [clearSignal, setClearSignal] = useState(0);
   const [isHost, setIsHost] = useState(false);
+  const [abortedBy, setAbortedBy] = useState<string | null>(null);
 
   const drawQueueRef = useRef<DrawData[]>([]);
 
@@ -150,6 +155,13 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         break;
       }
 
+      case 'game:abort': {
+        const username = payload.username as string;
+        setAbortedBy(username);
+        setGameStatus('aborted');
+        break;
+      }
+
       case 'answer:wrong': {
         const username = payload.username as string;
         const answer = payload.answer as string;
@@ -204,6 +216,10 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     send('canvas:clear', { roomCode });
   }, [send, roomCode]);
 
+  const sendAbort = useCallback(() => {
+    send('game:abort', { roomCode });
+  }, [send, roomCode]);
+
   return {
     gameStatus,
     players,
@@ -218,5 +234,7 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     submitAnswer,
     sendDraw,
     sendClear,
+    sendAbort,
+    abortedBy,
   };
 }
