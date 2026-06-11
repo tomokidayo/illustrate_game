@@ -634,6 +634,7 @@ a:hover { text-decoration: underline; }
 }
 
 .finished-title { font-size: 22px; font-weight: 700; }
+.finished-icon { font-size: 40px; line-height: 1; }
 
 .final-scores {
   list-style: none;

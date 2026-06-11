@@ -48,7 +48,7 @@ export default function Game() {
     return (
       <div className="finished-page">
         <div className="finished-card">
-          <div style={{ fontSize: 40 }}>🚫</div>
+          <div className="finished-icon">🚫</div>
           <h1 className="finished-title">ゲームを中断しました</h1>
           <p className="waiting-hint">{abortedBy} さんがゲームを中断しました</p>
           <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
@@ -64,7 +64,7 @@ export default function Game() {
     return (
       <div className="finished-page">
         <div className="finished-card">
-          <div style={{ fontSize: 40 }}>🏆</div>
+          <div className="finished-icon">🏆</div>
           <h1 className="finished-title">ゲーム終了！</h1>
           <ol className="final-scores">
             {sorted.map((p, i) => (

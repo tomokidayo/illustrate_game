@@ -42,6 +42,8 @@ function buildGame(overrides: Partial<UseGameReturn> = {}): UseGameReturn {
     submitAnswer: vi.fn(),
     sendDraw: vi.fn(),
     sendClear: vi.fn(),
+    sendAbort: vi.fn(),
+    abortedBy: null,
     ...overrides,
   };
 }
@@ -180,6 +182,23 @@ describe('終了フェーズ', () => {
 
   test('「ロビーに戻る」ボタンで /lobby に遷移する', async () => {
     mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'finished', players: finishedPlayers }));
+    renderGame();
+    await userEvent.click(screen.getByRole('button', { name: 'ロビーに戻る' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/lobby');
+  });
+});
+
+// ─── 中断フェーズ ─────────────────────────────────────────────────────────────
+
+describe('中断フェーズ', () => {
+  test('中断者名が表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'aborted', abortedBy: 'player2' }));
+    renderGame();
+    expect(screen.getByText(/player2 さんがゲームを中断しました/)).toBeInTheDocument();
+  });
+
+  test('「ロビーに戻る」ボタンで /lobby に遷移する', async () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'aborted', abortedBy: 'player2' }));
     renderGame();
     await userEvent.click(screen.getByRole('button', { name: 'ロビーに戻る' }));
     expect(mockNavigate).toHaveBeenCalledWith('/lobby');

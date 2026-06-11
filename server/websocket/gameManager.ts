@@ -198,6 +198,7 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.status = 'playing';
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
+  for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
   startTurn(room);
 }
@@ -228,6 +229,7 @@ function handleCanvasClear(ws: AuthedWebSocket, payload: Record<string, unknown>
 function handleGameAbort(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
   const room = rooms.get(payload.roomCode as string);
   if (!room || !ws.user || room.status !== 'playing') return;
+  if (!room.players.find(p => p.userId === ws.user!.id)) return;
   clearRoomTimers(room);
   room.status = 'waiting';
   room.gameTimeLeft = 300;
