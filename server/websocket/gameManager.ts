@@ -28,6 +28,8 @@ interface RoomState {
   tickInterval: NodeJS.Timeout | null;
   turnTimeLeft: number;
   gameTimeLeft: number;
+  /** 未出題のお題キュー（空になったらシャッフルして再充填） */
+  topicQueue: string[];
 }
 
 /** roomCode → RoomState */
@@ -53,9 +55,24 @@ function broadcastPlayersUpdated(room: RoomState): void {
   broadcast(room, 'room:players_updated', { players });
 }
 
-/** ランダムなお題を選ぶ */
-function pickTopic(): string {
-  return topics[Math.floor(Math.random() * topics.length)];
+/** Fisher-Yates シャッフル */
+function shuffle(arr: string[]): string[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * キューから次のお題を取り出す
+ * キューが空の場合はシャッフルして全お題を再充填する
+ */
+function pickTopic(room: RoomState): string {
+  if (room.topicQueue.length === 0) {
+    room.topicQueue = shuffle([...topics]);
+  }
+  return room.topicQueue.pop()!;
 }
 
 /** ターンタイマーをクリアする */
@@ -126,7 +143,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
  */
 function startTurn(room: RoomState): void {
   if (room.players.length === 0) return;
-  room.topic = pickTopic();
+  room.topic = pickTopic(room);
   room.turnTimeLeft = 30;
 
   const drawer = room.players[room.drawerIndex];
@@ -168,7 +185,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   const { id: roomId, host_user_id: hostUserId, status } = rows[0];
   let room = rooms.get(roomCode);
   if (!room) {
-    room = { roomId, roomCode, hostUserId, players: [], drawerIndex: 0, topic: '', status: status as RoomState['status'], tickInterval: null, turnTimeLeft: 30, gameTimeLeft: 300 };
+    room = { roomId, roomCode, hostUserId, players: [], drawerIndex: 0, topic: '', status: status as RoomState['status'], tickInterval: null, turnTimeLeft: 30, gameTimeLeft: 300, topicQueue: [] };
     rooms.set(roomCode, room);
   }
 
@@ -198,6 +215,7 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.status = 'playing';
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
+  room.topicQueue = [];
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
   startTurn(room);
