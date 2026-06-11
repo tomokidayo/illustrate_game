@@ -385,6 +385,9 @@ a:hover { text-decoration: underline; }
   background: var(--bg);
   min-height: 0;
   overflow: hidden;
+  /* キャンバス(400px)+上下padding(32px)+バナー相当(40px)に合わせて上限を設定 */
+  max-height: 472px;
+  align-self: flex-start;
 }
 
 /* Mobile: stack vertically */
@@ -403,6 +406,8 @@ a:hover { text-decoration: underline; }
     border-left: none;
     border-top: 1px solid var(--border);
     min-height: 0;
+    max-height: none;
+    align-self: auto;
     flex-direction: column-reverse; /* Scoreboard を下、Chat を上に */
   }
   /* フォームをキャンバス直下（Chat 内の先頭）に引き上げる */
