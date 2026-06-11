@@ -198,6 +198,7 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.status = 'playing';
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
+  for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
   startTurn(room);
 }
@@ -220,6 +221,21 @@ function handleCanvasClear(ws: AuthedWebSocket, payload: Record<string, unknown>
   if (!room || room.status !== 'playing') return;
   if (room.players[room.drawerIndex]?.userId !== ws.user?.id) return;
   for (const p of room.players) { if (p.ws !== ws) send(p.ws, 'canvas:clear', {}); }
+}
+
+/**
+ * game:abort ハンドラ：誰でも呼べる。ゲームを即時中断し全員に通知する
+ */
+function handleGameAbort(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
+  const room = rooms.get(payload.roomCode as string);
+  if (!room || !ws.user || room.status !== 'playing') return;
+  if (!room.players.find(p => p.userId === ws.user!.id)) return;
+  clearRoomTimers(room);
+  room.status = 'waiting';
+  room.gameTimeLeft = 300;
+  room.drawerIndex = 0;
+  void pool.query("UPDATE rooms SET status = 'waiting' WHERE id = $1", [room.roomId]);
+  broadcast(room, 'game:abort', { username: ws.user.username });
 }
 
 /**
@@ -289,6 +305,7 @@ export function handle(_wss: WebSocketServer, ws: AuthedWebSocket, msg: unknown)
     case 'canvas:draw':   handleCanvasDraw(ws, payload); break;
     case 'canvas:clear':  handleCanvasClear(ws, payload); break;
     case 'answer:submit': handleAnswerSubmit(ws, payload); break;
+    case 'game:abort':    handleGameAbort(ws, payload); break;
   }
 }
 

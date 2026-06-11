@@ -28,7 +28,15 @@ export default function Game() {
     submitAnswer,
     sendDraw,
     sendClear,
+    sendAbort,
+    abortedBy,
   } = useGame(roomCode!, user!.id);
+
+  function handleAbort() {
+    if (window.confirm('ゲームを中断しますか？\n全員がロビーに戻ります。')) {
+      sendAbort();
+    }
+  }
 
   const isDrawer = turn?.drawerId === user!.id;
 
@@ -36,12 +44,27 @@ export default function Game() {
     return <div className="connecting-page">接続中...</div>;
   }
 
+  if (gameStatus === 'aborted') {
+    return (
+      <div className="finished-page">
+        <div className="finished-card">
+          <div className="finished-icon">🚫</div>
+          <h1 className="finished-title">ゲームを中断しました</h1>
+          <p className="waiting-hint">{abortedBy} さんがゲームを中断しました</p>
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
+            ロビーに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (gameStatus === 'finished') {
     const sorted = [...players].sort((a, b) => b.score - a.score);
     return (
       <div className="finished-page">
         <div className="finished-card">
-          <div style={{ fontSize: 40 }}>🏆</div>
+          <div className="finished-icon">🏆</div>
           <h1 className="finished-title">ゲーム終了！</h1>
           <ol className="final-scores">
             {sorted.map((p, i) => (
@@ -98,6 +121,9 @@ export default function Game() {
         <span className="game-header-drawer">
           絵描き：<strong>{turn?.drawerName ?? '—'}</strong>
         </span>
+        <button className="btn btn-ghost btn-sm" type="button" onClick={handleAbort}>
+          中断
+        </button>
       </header>
 
       {isDrawer && turn?.topic && (
