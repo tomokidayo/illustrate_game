@@ -126,6 +126,14 @@ function endGame(room: RoomState): void {
 function endTurn(room: RoomState, correct: { userId: string; username: string } | null): void {
   if (room.status !== 'playing') return;
   clearRoomTimers(room);
+
+  // 正解者なしの場合は描き手 -2
+  if (!correct) {
+    const drawer = room.players[room.drawerIndex];
+    if (drawer) drawer.score -= 2;
+    broadcastPlayersUpdated(room);
+  }
+
   broadcast(room, 'game:turn_end', { topic: room.topic, correct });
 
   if (room.gameTimeLeft <= 0) { endGame(room); return; }
@@ -267,8 +275,11 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
 
   if (answer.toLowerCase() === room.topic.toLowerCase()) {
     const player = room.players.find(p => p.userId === ws.user!.id);
-    if (player) player.score += 1;
-    broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 1 });
+    if (player) player.score += 3;
+    const drawer = room.players[room.drawerIndex];
+    if (drawer) drawer.score += 2;
+    broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 3 });
+    broadcastPlayersUpdated(room);
     endTurn(room, { userId: ws.user.id, username: ws.user.username });
   } else {
     broadcast(room, 'answer:wrong', { userId: ws.user.id, username: ws.user.username, answer });
