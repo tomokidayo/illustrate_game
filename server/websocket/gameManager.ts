@@ -1,7 +1,7 @@
 import { WebSocketServer } from 'ws';
 import { AuthedWebSocket } from './wsServer';
 import pool from '../db';
-import topics from '../data/topics';
+import topics, { Topic } from '../data/topics';
 
 /** WebSocketメッセージの共通形式 */
 type WsMessage = { type: string; payload?: Record<string, unknown> };
@@ -22,14 +22,17 @@ interface RoomState {
   players: Player[];
   /** players配列上の絵描き役インデックス */
   drawerIndex: number;
+  /** 絵描き役に表示するお題（label） */
   topic: string;
+  /** 正解判定用ひらがな読み */
+  topicHiragana: string;
   status: 'waiting' | 'playing' | 'finished';
   /** ターン中のみ有効な毎秒インターバル */
   tickInterval: NodeJS.Timeout | null;
   turnTimeLeft: number;
   gameTimeLeft: number;
   /** 未出題のお題キュー（空になったらシャッフルして再充填） */
-  topicQueue: string[];
+  topicQueue: Topic[];
 }
 
 /** roomCode → RoomState */
@@ -56,7 +59,7 @@ function broadcastPlayersUpdated(room: RoomState): void {
 }
 
 /** Fisher-Yates シャッフル */
-function shuffle(arr: string[]): string[] {
+function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
@@ -65,10 +68,21 @@ function shuffle(arr: string[]): string[] {
 }
 
 /**
+ * カタカナをひらがなに変換し、前後の空白を除去する
+ * 「イヌ」→「いぬ」のように正規化することで、ひらがな・カタカナ両方の回答を受け付ける
+ */
+function normalizeToHiragana(s: string): string {
+  return s
+    .trim()
+    .replace(/[ァ-ヶ]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60))
+    .toLowerCase();
+}
+
+/**
  * キューから次のお題を取り出す
  * キューが空の場合はシャッフルして全お題を再充填する
  */
-function pickTopic(room: RoomState): string {
+function pickTopic(room: RoomState): Topic {
   if (room.topicQueue.length === 0) {
     room.topicQueue = shuffle([...topics]);
   }
@@ -151,7 +165,9 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
  */
 function startTurn(room: RoomState): void {
   if (room.players.length === 0) return;
-  room.topic = pickTopic(room);
+  const picked = pickTopic(room);
+  room.topic = picked.label;
+  room.topicHiragana = normalizeToHiragana(picked.hiragana);
   room.turnTimeLeft = 30;
 
   const drawer = room.players[room.drawerIndex];
@@ -193,7 +209,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   const { id: roomId, host_user_id: hostUserId, status } = rows[0];
   let room = rooms.get(roomCode);
   if (!room) {
-    room = { roomId, roomCode, hostUserId, players: [], drawerIndex: 0, topic: '', status: status as RoomState['status'], tickInterval: null, turnTimeLeft: 30, gameTimeLeft: 300, topicQueue: [] };
+    room = { roomId, roomCode, hostUserId, players: [], drawerIndex: 0, topic: '', topicHiragana: '', status: status as RoomState['status'], tickInterval: null, turnTimeLeft: 30, gameTimeLeft: 300, topicQueue: [] };
     rooms.set(roomCode, room);
   }
 
@@ -224,6 +240,7 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
   room.topicQueue = [];
+  room.topicHiragana = '';
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
   startTurn(room);
@@ -273,7 +290,8 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
   if (!room || room.status !== 'playing' || !ws.user) return;
   if (room.players[room.drawerIndex]?.userId === ws.user.id) return; // 絵描き役は回答不可
 
-  if (answer.toLowerCase() === room.topic.toLowerCase()) {
+  const normalizedAnswer = normalizeToHiragana(answer);
+  if (normalizedAnswer === room.topicHiragana || answer.trim() === room.topic) {
     const player = room.players.find(p => p.userId === ws.user!.id);
     if (player) player.score += 3;
     const drawer = room.players[room.drawerIndex];
