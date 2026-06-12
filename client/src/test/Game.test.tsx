@@ -44,6 +44,17 @@ function buildGame(overrides: Partial<UseGameReturn> = {}): UseGameReturn {
     sendClear: vi.fn(),
     sendAbort: vi.fn(),
     abortedBy: null,
+    gameMode: null,
+    myRole: null,
+    consecutiveCorrect: 0,
+    judgmentPhase: false,
+    judgmentPlayers: [],
+    judgmentTimeLeft: 30,
+    judgmentVotedCount: 0,
+    judgmentTotalCount: 0,
+    hasVoted: false,
+    werewolfResult: null,
+    sendVote: vi.fn(),
     ...overrides,
   };
 }

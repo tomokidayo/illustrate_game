@@ -5,6 +5,9 @@ import api from '../utils/api';
 /** ゲームの進行状態 */
 export type GameStatus = 'connecting' | 'waiting' | 'playing' | 'finished' | 'aborted';
 
+/** ゲームモード */
+export type GameMode = 'normal' | 'werewolf';
+
 /** プレイヤー情報 */
 export interface Player {
   userId: string;
@@ -50,6 +53,19 @@ export interface TurnEndInfo {
   correct: { userId: string; username: string } | null;
 }
 
+/** 人狼モード終了時の結果データ */
+export interface WerewolfResult {
+  winner: 'citizens' | 'werewolf';
+  werewolfUserId: string;
+  werewolfUsername: string;
+  votes: Array<{
+    voterId: string;
+    voterName: string;
+    targetId: string | null;
+    targetName: string | null;
+  }>;
+}
+
 /** useGame フックの戻り値 */
 export interface UseGameReturn {
   gameStatus: GameStatus;
@@ -61,7 +77,7 @@ export interface UseGameReturn {
   clearSignal: number;
   isHost: boolean;
   send: (type: string, payload?: Record<string, unknown>) => void;
-  startGame: () => void;
+  startGame: (mode?: GameMode) => void;
   submitAnswer: (answer: string) => void;
   sendDraw: (data: Omit<DrawData, 'roomCode'>) => void;
   sendClear: () => void;
@@ -69,6 +85,28 @@ export interface UseGameReturn {
   sendAbort: () => void;
   /** 中断したプレイヤーのユーザー名（game:abort 受信時にセット） */
   abortedBy: string | null;
+  /** 現在のゲームモード */
+  gameMode: GameMode | null;
+  /** 自分の人狼モード役職 */
+  myRole: 'citizen' | 'werewolf' | null;
+  /** 連続正解ターン数（人狼モード） */
+  consecutiveCorrect: number;
+  /** ジャッジメントフェーズ中かどうか */
+  judgmentPhase: boolean;
+  /** ジャッジメントフェーズのプレイヤー一覧 */
+  judgmentPlayers: Array<{ userId: string; username: string }>;
+  /** ジャッジメントの残り時間（秒） */
+  judgmentTimeLeft: number;
+  /** 投票済み人数 */
+  judgmentVotedCount: number;
+  /** 総プレイヤー数 */
+  judgmentTotalCount: number;
+  /** 自分が投票済みかどうか */
+  hasVoted: boolean;
+  /** 人狼モードの結果 */
+  werewolfResult: WerewolfResult | null;
+  /** 投票を送信する */
+  sendVote: (targetUserId: string) => void;
 }
 
 let messageCounter = 0;
@@ -91,7 +129,34 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   const [isHost, setIsHost] = useState(false);
   const [abortedBy, setAbortedBy] = useState<string | null>(null);
 
+  // 人狼モード関連の状態
+  const [gameMode, setGameMode] = useState<GameMode | null>(null);
+  const [myRole, setMyRole] = useState<'citizen' | 'werewolf' | null>(null);
+  const [consecutiveCorrect, setConsecutiveCorrect] = useState(0);
+  const [judgmentPhase, setJudgmentPhase] = useState(false);
+  const [judgmentPlayers, setJudgmentPlayers] = useState<Array<{ userId: string; username: string }>>([]);
+  const [judgmentTimeLeft, setJudgmentTimeLeft] = useState(30);
+  const [judgmentVotedCount, setJudgmentVotedCount] = useState(0);
+  const [judgmentTotalCount, setJudgmentTotalCount] = useState(0);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [werewolfResult, setWerewolfResult] = useState<WerewolfResult | null>(null);
+
   const drawQueueRef = useRef<DrawData[]>([]);
+
+  // ジャッジメントカウントダウン
+  useEffect(() => {
+    if (!judgmentPhase) return;
+    const interval = setInterval(() => {
+      setJudgmentTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [judgmentPhase]);
 
   const addMessage = useCallback((msg: Omit<ChatMessage, 'id'>) => {
     setMessages(prev => [...prev, { ...msg, id: nextId() }]);
@@ -129,6 +194,11 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         const topic = payload.topic as string;
         const correct = payload.correct as { userId: string; username: string } | null;
         setTurnEndInfo({ topic, correct });
+        if (correct) {
+          setConsecutiveCorrect(prev => prev + 1);
+        } else {
+          setConsecutiveCorrect(0);
+        }
         addMessage({
           kind: 'system',
           text: correct ? `✅ ${correct.username} が正解！ お題：${topic}` : `時間切れ。お題は「${topic}」でした`,
@@ -184,6 +254,58 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         addMessage({ kind: 'system', text: payload.message as string });
         break;
       }
+
+      // ─── 人狼モード専用イベント ───────────────────────────────────────
+
+      case 'werewolf:role': {
+        const role = payload.role as 'citizen' | 'werewolf';
+        setMyRole(role);
+        setGameMode('werewolf');
+        setConsecutiveCorrect(0);
+        break;
+      }
+
+      case 'judgment:start': {
+        const jPlayers = payload.players as Array<{ userId: string; username: string }>;
+        const timeLeft = payload.timeLeft as number;
+        setJudgmentPhase(true);
+        setJudgmentPlayers(jPlayers);
+        setJudgmentTimeLeft(timeLeft);
+        setJudgmentVotedCount(0);
+        setJudgmentTotalCount(jPlayers.length);
+        setHasVoted(false);
+        break;
+      }
+
+      case 'judgment:voted': {
+        setJudgmentVotedCount(payload.votedCount as number);
+        break;
+      }
+
+      case 'judgment:result': {
+        const result: WerewolfResult = {
+          winner: payload.winner as 'citizens' | 'werewolf',
+          werewolfUserId: payload.werewolfUserId as string,
+          werewolfUsername: payload.werewolfUsername as string,
+          votes: payload.votes as WerewolfResult['votes'],
+        };
+        setWerewolfResult(result);
+        setJudgmentPhase(false);
+        setGameStatus('finished');
+        break;
+      }
+
+      case 'game:werewolf_end': {
+        setWerewolfResult({
+          winner: 'citizens',
+          werewolfUserId: payload.werewolfUserId as string,
+          werewolfUsername: payload.werewolfUsername as string,
+          votes: [],
+        });
+        setGameStatus('finished');
+        setTurnEndInfo(null);
+        break;
+      }
     }
   }, [addMessage, roomCode]);
 
@@ -197,8 +319,12 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
       .catch(() => {});
   }, [roomCode, userId]);
 
-  const startGame = useCallback(() => {
-    send('game:start', { roomCode });
+  /**
+   * ゲームを開始する
+   * @param mode - ゲームモード（デフォルト: 'normal'）
+   */
+  const startGame = useCallback((mode: GameMode = 'normal') => {
+    send('game:start', { roomCode, mode });
   }, [send, roomCode]);
 
   const submitAnswer = useCallback((answer: string) => {
@@ -220,6 +346,15 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     send('game:abort', { roomCode });
   }, [send, roomCode]);
 
+  /**
+   * ジャッジメントフェーズで投票を送信する
+   * @param targetUserId - 投票先プレイヤーのID
+   */
+  const sendVote = useCallback((targetUserId: string) => {
+    send('judgment:vote', { roomCode, targetUserId });
+    setHasVoted(true);
+  }, [send, roomCode]);
+
   return {
     gameStatus,
     players,
@@ -236,5 +371,16 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     sendClear,
     sendAbort,
     abortedBy,
+    gameMode,
+    myRole,
+    consecutiveCorrect,
+    judgmentPhase,
+    judgmentPlayers,
+    judgmentTimeLeft,
+    judgmentVotedCount,
+    judgmentTotalCount,
+    hasVoted,
+    werewolfResult,
+    sendVote,
   };
 }

@@ -33,6 +33,18 @@ interface RoomState {
   gameTimeLeft: number;
   /** 未出題のお題キュー（空になったらシャッフルして再充填） */
   topicQueue: Topic[];
+  /** ゲームモード */
+  mode: 'normal' | 'werewolf';
+  /** 人狼役のユーザーID */
+  werewolfUserId: string | null;
+  /** 連続正解ターン数（人狼モード用） */
+  consecutiveCorrect: number;
+  /** 投票データ（voterId → targetUserId） */
+  votes: Map<string, string>;
+  /** ジャッジメントフェーズ中かどうか */
+  judgmentPhase: boolean;
+  /** ジャッジメントタイマー */
+  judgmentTimer: NodeJS.Timeout | null;
 }
 
 /** roomCode → RoomState */
@@ -89,9 +101,10 @@ function pickTopic(room: RoomState): Topic {
   return room.topicQueue.pop()!;
 }
 
-/** ターンタイマーをクリアする */
+/** ターン・ジャッジメントタイマーをすべてクリアする */
 function clearRoomTimers(room: RoomState): void {
   if (room.tickInterval) { clearInterval(room.tickInterval); room.tickInterval = null; }
+  if (room.judgmentTimer) { clearTimeout(room.judgmentTimer); room.judgmentTimer = null; }
 }
 
 /**
@@ -125,11 +138,115 @@ async function saveGameHistory(
 /** ゲームを終了しDB・全員に通知する */
 function endGame(room: RoomState): void {
   clearRoomTimers(room);
+  if (room.mode === 'werewolf') {
+    startJudgmentTime(room);
+    return;
+  }
   room.status = 'finished';
   const scores = room.players.map(({ userId, username, score }) => ({ userId, username, score }));
   void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
   void saveGameHistory(room, scores);
   broadcast(room, 'game:end', { players: scores });
+}
+
+/**
+ * 人狼モード：連続正解5ターン達成時の市民勝利処理
+ * @param room - 対象ルーム
+ * @param correct - 正解者情報
+ */
+function endWerewolfCitizensStreak(
+  room: RoomState,
+  correct: { userId: string; username: string }
+): void {
+  clearRoomTimers(room);
+  room.status = 'finished';
+  broadcast(room, 'game:turn_end', { topic: room.topic, correct });
+  const werewolf = room.players.find(p => p.userId === room.werewolfUserId);
+  setTimeout(() => {
+    broadcast(room, 'game:werewolf_end', {
+      result: 'citizens_win_streak',
+      werewolfUserId: room.werewolfUserId,
+      werewolfUsername: werewolf?.username ?? '',
+    });
+    void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
+  }, 2000);
+}
+
+/**
+ * 人狼モード：ジャッジメントフェーズを開始する
+ * @param room - 対象ルーム
+ */
+function startJudgmentTime(room: RoomState): void {
+  room.judgmentPhase = true;
+  room.votes = new Map();
+  const players = room.players.map(({ userId, username }) => ({ userId, username }));
+  broadcast(room, 'judgment:start', { players, timeLeft: 30 });
+  room.judgmentTimer = setTimeout(() => resolveJudgment(room), 30000);
+}
+
+/**
+ * 人狼モード：投票を集計して勝敗を決定する
+ * @param room - 対象ルーム
+ */
+function resolveJudgment(room: RoomState): void {
+  if (room.judgmentTimer) { clearTimeout(room.judgmentTimer); room.judgmentTimer = null; }
+
+  const werewolf = room.players.find(p => p.userId === room.werewolfUserId);
+
+  const countVotes = (votes: Map<string, string>): Map<string, number> => {
+    const tally = new Map<string, number>();
+    for (const targetId of votes.values()) {
+      tally.set(targetId, (tally.get(targetId) ?? 0) + 1);
+    }
+    return tally;
+  };
+
+  const findWinner = (votes: Map<string, string>, totalVoters: number): 'citizens' | 'werewolf' => {
+    const tally = countVotes(votes);
+    let maxTarget = '';
+    let maxCount = 0;
+    for (const [target, count] of tally) {
+      if (count > maxCount) { maxTarget = target; maxCount = count; }
+    }
+    const majority = maxCount > totalVoters / 2;
+    if (majority && maxTarget === room.werewolfUserId) return 'citizens';
+
+    // 同数またはno majorityの場合：人狼の票を除いて再集計
+    const topCount = [...tally.values()].filter(c => c === maxCount).length;
+    const isTied = topCount > 1 || !majority;
+    if (isTied && room.werewolfUserId) {
+      const filteredVotes = new Map(votes);
+      filteredVotes.delete(room.werewolfUserId);
+      const filteredTally = countVotes(filteredVotes);
+      let filteredMax = '';
+      let filteredMaxCount = 0;
+      for (const [target, count] of filteredTally) {
+        if (count > filteredMaxCount) { filteredMax = target; filteredMaxCount = count; }
+      }
+      const filteredMajority = filteredMaxCount > filteredVotes.size / 2;
+      if (filteredMajority && filteredMax === room.werewolfUserId) return 'citizens';
+    }
+    return 'werewolf';
+  };
+
+  const winner = findWinner(room.votes, room.players.length);
+
+  const voteDetails = room.players.map(p => ({
+    voterId: p.userId,
+    voterName: p.username,
+    targetId: room.votes.get(p.userId) ?? null,
+    targetName: room.players.find(t => t.userId === room.votes.get(p.userId))?.username ?? null,
+  }));
+
+  room.status = 'finished';
+  room.judgmentPhase = false;
+  void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
+  broadcast(room, 'judgment:result', {
+    winner,
+    werewolfUserId: room.werewolfUserId,
+    werewolfUsername: werewolf?.username ?? '',
+    votes: voteDetails,
+  });
 }
 
 /**
@@ -141,11 +258,29 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   if (room.status !== 'playing') return;
   clearRoomTimers(room);
 
-  // 正解者なしの場合は描き手 -2
-  if (!correct) {
-    const drawer = room.players[room.drawerIndex];
-    if (drawer) drawer.score -= 2;
-    broadcastPlayersUpdated(room);
+  if (correct !== null) {
+    room.consecutiveCorrect += 1;
+    // 人狼モードでスコアを付与しない
+    if (room.mode !== 'werewolf') {
+      const player = room.players.find(p => p.userId === correct.userId);
+      if (player) player.score += 3;
+      const drawer = room.players[room.drawerIndex];
+      if (drawer) drawer.score += 2;
+      broadcastPlayersUpdated(room);
+    }
+    // 人狼モード：5連続正解で市民勝利
+    if (room.mode === 'werewolf' && room.consecutiveCorrect >= 5) {
+      endWerewolfCitizensStreak(room, correct);
+      return;
+    }
+  } else {
+    room.consecutiveCorrect = 0;
+    // 正解者なしの場合は描き手 -2（通常モードのみ）
+    if (room.mode !== 'werewolf') {
+      const drawer = room.players[room.drawerIndex];
+      if (drawer) drawer.score -= 2;
+      broadcastPlayersUpdated(room);
+    }
   }
 
   broadcast(room, 'game:turn_end', { topic: room.topic, correct });
@@ -209,7 +344,26 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   const { id: roomId, host_user_id: hostUserId, status } = rows[0];
   let room = rooms.get(roomCode);
   if (!room) {
-    room = { roomId, roomCode, hostUserId, players: [], drawerIndex: 0, topic: '', topicHiragana: '', status: status as RoomState['status'], tickInterval: null, turnTimeLeft: 30, gameTimeLeft: 300, topicQueue: [] };
+    room = {
+      roomId,
+      roomCode,
+      hostUserId,
+      players: [],
+      drawerIndex: 0,
+      topic: '',
+      topicHiragana: '',
+      status: status as RoomState['status'],
+      tickInterval: null,
+      turnTimeLeft: 30,
+      gameTimeLeft: 300,
+      topicQueue: [],
+      mode: 'normal',
+      werewolfUserId: null,
+      consecutiveCorrect: 0,
+      votes: new Map(),
+      judgmentPhase: false,
+      judgmentTimer: null,
+    };
     rooms.set(roomCode, room);
   }
 
@@ -228,6 +382,8 @@ function handleRoomLeave(ws: AuthedWebSocket, payload: Record<string, unknown>):
 
 /**
  * game:start ハンドラ：ホストのみゲームを開始できる（3人以上必要）
+ * @param ws - 送信元WebSocket
+ * @param payload - roomCode, mode ('normal' | 'werewolf')
  */
 function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
   const room = rooms.get(payload.roomCode as string);
@@ -236,13 +392,34 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   if (room.status !== 'waiting') { send(ws, 'error', { message: 'Game already started' }); return; }
   if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
 
+  const mode = (payload.mode as 'normal' | 'werewolf') ?? 'normal';
+  room.mode = mode;
   room.status = 'playing';
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
   room.topicQueue = [];
   room.topicHiragana = '';
+  room.consecutiveCorrect = 0;
+  room.votes = new Map();
+  room.judgmentPhase = false;
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
+
+  if (mode === 'werewolf') {
+    // ランダムに1人を人狼に選ぶ
+    const werewolfIndex = Math.floor(Math.random() * room.players.length);
+    room.werewolfUserId = room.players[werewolfIndex].userId;
+
+    // 各プレイヤーに役職を通知
+    for (const p of room.players) {
+      send(p.ws, 'werewolf:role', {
+        role: p.userId === room.werewolfUserId ? 'werewolf' : 'citizen',
+      });
+    }
+  } else {
+    room.werewolfUserId = null;
+  }
+
   startTurn(room);
 }
 
@@ -277,6 +454,7 @@ function handleGameAbort(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.status = 'waiting';
   room.gameTimeLeft = 300;
   room.drawerIndex = 0;
+  room.judgmentPhase = false;
   void pool.query("UPDATE rooms SET status = 'waiting' WHERE id = $1", [room.roomId]);
   broadcast(room, 'game:abort', { username: ws.user.username });
 }
@@ -292,15 +470,47 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
 
   const normalizedAnswer = normalizeToHiragana(answer);
   if (normalizedAnswer === room.topicHiragana || answer.trim() === room.topic) {
-    const player = room.players.find(p => p.userId === ws.user!.id);
-    if (player) player.score += 3;
-    const drawer = room.players[room.drawerIndex];
-    if (drawer) drawer.score += 2;
-    broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 3 });
-    broadcastPlayersUpdated(room);
+    if (room.mode !== 'werewolf') {
+      // 通常モード：スコア付与
+      const player = room.players.find(p => p.userId === ws.user!.id);
+      if (player) player.score += 3;
+      const drawer = room.players[room.drawerIndex];
+      if (drawer) drawer.score += 2;
+      broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 3 });
+      broadcastPlayersUpdated(room);
+    } else {
+      // 人狼モード：スコアなし
+      broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: 0 });
+    }
     endTurn(room, { userId: ws.user.id, username: ws.user.username });
   } else {
     broadcast(room, 'answer:wrong', { userId: ws.user.id, username: ws.user.username, answer });
+  }
+}
+
+/**
+ * judgment:vote ハンドラ：人狼モードのジャッジメントフェーズで投票を受け付ける
+ * @param ws - 送信元WebSocket
+ * @param payload - roomCode, targetUserId
+ */
+function handleJudgmentVote(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
+  const room = rooms.get(payload.roomCode as string);
+  const targetUserId = payload.targetUserId as string;
+  if (!room || !ws.user || !room.judgmentPhase) return;
+  if (!room.players.find(p => p.userId === ws.user!.id)) return;
+  if (!room.players.find(p => p.userId === targetUserId)) return;
+  if (ws.user.id === targetUserId) return; // 自分自身には投票不可
+
+  room.votes.set(ws.user.id, targetUserId);
+  broadcast(room, 'judgment:voted', {
+    userId: ws.user.id,
+    votedCount: room.votes.size,
+    totalCount: room.players.length,
+  });
+
+  // 全員が投票したら即時集計
+  if (room.votes.size >= room.players.length) {
+    resolveJudgment(room);
   }
 }
 
@@ -346,13 +556,14 @@ function removePlayer(ws: AuthedWebSocket, roomCode?: string): void {
 export function handle(_wss: WebSocketServer, ws: AuthedWebSocket, msg: unknown): void {
   const { type, payload = {} } = msg as WsMessage;
   switch (type) {
-    case 'room:join':     void handleRoomJoin(ws, payload); break;
-    case 'room:leave':    handleRoomLeave(ws, payload); break;
-    case 'game:start':    handleGameStart(ws, payload); break;
-    case 'canvas:draw':   handleCanvasDraw(ws, payload); break;
-    case 'canvas:clear':  handleCanvasClear(ws, payload); break;
-    case 'answer:submit': handleAnswerSubmit(ws, payload); break;
-    case 'game:abort':    handleGameAbort(ws, payload); break;
+    case 'room:join':       void handleRoomJoin(ws, payload); break;
+    case 'room:leave':      handleRoomLeave(ws, payload); break;
+    case 'game:start':      handleGameStart(ws, payload); break;
+    case 'canvas:draw':     handleCanvasDraw(ws, payload); break;
+    case 'canvas:clear':    handleCanvasClear(ws, payload); break;
+    case 'answer:submit':   handleAnswerSubmit(ws, payload); break;
+    case 'game:abort':      handleGameAbort(ws, payload); break;
+    case 'judgment:vote':   handleJudgmentVote(ws, payload); break;
   }
 }
 
