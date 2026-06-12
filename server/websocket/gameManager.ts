@@ -167,7 +167,7 @@ function startTurn(room: RoomState): void {
   if (room.players.length === 0) return;
   const picked = pickTopic(room);
   room.topic = picked.label;
-  room.topicHiragana = picked.hiragana;
+  room.topicHiragana = normalizeToHiragana(picked.hiragana);
   room.turnTimeLeft = 30;
 
   const drawer = room.players[room.drawerIndex];
