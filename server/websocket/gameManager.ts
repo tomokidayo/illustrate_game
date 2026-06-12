@@ -259,15 +259,8 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   clearRoomTimers(room);
 
   if (correct !== null) {
+    // スコア付与は handleAnswerSubmit で実施済みのため、ここではカウントのみ
     room.consecutiveCorrect += 1;
-    // 人狼モードでスコアを付与しない
-    if (room.mode !== 'werewolf') {
-      const player = room.players.find(p => p.userId === correct.userId);
-      if (player) player.score += 3;
-      const drawer = room.players[room.drawerIndex];
-      if (drawer) drawer.score += 2;
-      broadcastPlayersUpdated(room);
-    }
     // 人狼モード：5連続正解で市民勝利
     if (room.mode === 'werewolf' && room.consecutiveCorrect >= 5) {
       endWerewolfCitizensStreak(room, correct);
