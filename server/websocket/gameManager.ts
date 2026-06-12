@@ -459,6 +459,7 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
   const room = rooms.get(payload.roomCode as string);
   const answer = ((payload.answer as string) ?? '').trim();
   if (!room || room.status !== 'playing' || !ws.user) return;
+  if (room.judgmentPhase) return;
   if (room.players[room.drawerIndex]?.userId === ws.user.id) return; // 絵描き役は回答不可
 
   const normalizedAnswer = normalizeToHiragana(answer);
@@ -493,6 +494,7 @@ function handleJudgmentVote(ws: AuthedWebSocket, payload: Record<string, unknown
   if (!room.players.find(p => p.userId === ws.user!.id)) return;
   if (!room.players.find(p => p.userId === targetUserId)) return;
   if (ws.user.id === targetUserId) return; // 自分自身には投票不可
+  if (room.votes.has(ws.user.id)) return;  // 再投票不可
 
   room.votes.set(ws.user.id, targetUserId);
   broadcast(room, 'judgment:voted', {
