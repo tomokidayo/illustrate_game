@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -73,6 +73,7 @@ export default function Lobby() {
         <div className="lobby-header-logo">🌲 お絵描きの森</div>
         <div className="lobby-header-user">
           <span>{user?.username}</span>
+          <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
           <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
         </div>
       </header>
