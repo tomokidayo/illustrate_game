@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useGame } from '../hooks/useGame';
+import { useGame, GameMode } from '../hooks/useGame';
 import Canvas from '../components/Canvas';
 import Chat from '../components/Chat';
 import Timer from '../components/Timer';
@@ -14,6 +15,8 @@ export default function Game() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
 
   const {
     gameStatus,
@@ -30,6 +33,17 @@ export default function Game() {
     sendClear,
     sendAbort,
     abortedBy,
+    gameMode,
+    myRole,
+    consecutiveCorrect,
+    judgmentPhase,
+    judgmentPlayers,
+    judgmentTimeLeft,
+    judgmentVotedCount,
+    judgmentTotalCount,
+    hasVoted,
+    werewolfResult,
+    sendVote,
   } = useGame(roomCode!, user!.id);
 
   function handleAbort() {
@@ -59,6 +73,40 @@ export default function Game() {
     );
   }
 
+  // ─── 人狼モード終了画面 ──────────────────────────────────────────────────────
+  if (gameStatus === 'finished' && gameMode === 'werewolf' && werewolfResult) {
+    const citizensWon = werewolfResult.winner === 'citizens';
+    return (
+      <div className="finished-page">
+        <div className="finished-card werewolf-result-card">
+          <div className="finished-icon">{citizensWon ? '🎉' : '🐺'}</div>
+          <h1 className="finished-title">
+            {citizensWon ? '市民の勝利！' : '人狼の勝利！'}
+          </h1>
+          <p className="werewolf-reveal">
+            人狼は <strong>{werewolfResult.werewolfUsername}</strong> でした
+          </p>
+          {werewolfResult.votes.length > 0 && (
+            <div className="vote-detail-list">
+              <div className="vote-detail-header">投票結果</div>
+              {werewolfResult.votes.map(v => (
+                <div key={v.voterId} className="vote-detail-item">
+                  <span className="vote-detail-voter">{v.voterName}</span>
+                  <span className="vote-detail-arrow">→</span>
+                  <span className="vote-detail-target">{v.targetName ?? '（未投票）'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
+            ロビーに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 通常モード終了画面 ──────────────────────────────────────────────────────
   if (gameStatus === 'finished') {
     const sorted = [...players].sort((a, b) => b.score - a.score);
     return (
@@ -83,6 +131,42 @@ export default function Game() {
     );
   }
 
+  // ─── ジャッジメントフェーズ ──────────────────────────────────────────────────
+  if (judgmentPhase) {
+    return (
+      <div className="judgment-page">
+        <div className="judgment-card">
+          <div className="finished-icon">🗳️</div>
+          <h1 className="finished-title">ジャッジメントタイム</h1>
+          <p className="waiting-hint">人狼だと思うプレイヤーに投票してください</p>
+          <div className="judgment-timer">残り {judgmentTimeLeft} 秒</div>
+          <div className="judgment-voted-count">
+            {judgmentVotedCount} / {judgmentTotalCount} 人が投票済み
+          </div>
+          {hasVoted ? (
+            <p className="waiting-hint">投票しました。他の人の投票を待っています...</p>
+          ) : (
+            <div className="judgment-players">
+              {judgmentPlayers
+                .filter(p => p.userId !== user!.id)
+                .map(p => (
+                  <button
+                    key={p.userId}
+                    className="judgment-player-btn"
+                    type="button"
+                    onClick={() => sendVote(p.userId)}
+                  >
+                    {p.username}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── 待機フェーズ ────────────────────────────────────────────────────────────
   if (gameStatus === 'waiting') {
     const canStart = players.length >= 3;
     return (
@@ -96,14 +180,36 @@ export default function Game() {
             {players.length} 人接続中（ゲーム開始には 3 人以上必要）
           </p>
           {isHost ? (
-            <button
-              className="btn btn-primary btn-full"
-              type="button"
-              onClick={startGame}
-              disabled={!canStart}
-            >
-              ゲーム開始
-            </button>
+            <>
+              <div className="mode-selector">
+                <label>
+                  <input
+                    type="radio"
+                    value="normal"
+                    checked={selectedMode === 'normal'}
+                    onChange={() => setSelectedMode('normal')}
+                  />
+                  {' '}通常モード
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="werewolf"
+                    checked={selectedMode === 'werewolf'}
+                    onChange={() => setSelectedMode('werewolf')}
+                  />
+                  {' '}人狼モード
+                </label>
+              </div>
+              <button
+                className="btn btn-primary btn-full"
+                type="button"
+                onClick={() => startGame(selectedMode)}
+                disabled={!canStart}
+              >
+                ゲーム開始
+              </button>
+            </>
           ) : (
             <p className="waiting-hint">ホストがゲームを開始するまでお待ちください...</p>
           )}
@@ -112,7 +218,7 @@ export default function Game() {
     );
   }
 
-  // playing フェーズ
+  // ─── プレイフェーズ ──────────────────────────────────────────────────────────
   return (
     <div className="game-layout">
       <header className="game-header">
@@ -121,10 +227,26 @@ export default function Game() {
         <span className="game-header-drawer">
           絵描き：<strong>{turn?.drawerName ?? '—'}</strong>
         </span>
+        {gameMode === 'werewolf' && (
+          <div className="streak-counter">
+            🔥 {consecutiveCorrect}/5 連続正解
+          </div>
+        )}
         <button className="btn btn-ghost btn-sm" type="button" onClick={handleAbort}>
           中断
         </button>
       </header>
+
+      {myRole === 'werewolf' && (
+        <div className="werewolf-role-banner">
+          🐺 あなたは人狼です！
+        </div>
+      )}
+      {myRole === 'citizen' && (
+        <div className="citizen-role-banner">
+          👤 あなたは市民です
+        </div>
+      )}
 
       {isDrawer && turn?.topic && (
         <div className="game-drawer-banner">
@@ -143,18 +265,22 @@ export default function Game() {
           />
         </div>
         <div className="game-sidebar">
-          <Scoreboard players={players} drawerId={turn?.drawerId} />
-          <div className="score-ref">
-            <div className="score-ref-title">得点表</div>
-            <div className="score-ref-row">
-              <span>正解</span>
-              <span className="score-ref-pts score-ref-pts--plus">回答者 ＋3 / 描き手 ＋2</span>
-            </div>
-            <div className="score-ref-row">
-              <span>正解なし</span>
-              <span className="score-ref-pts score-ref-pts--minus">描き手 −2</span>
-            </div>
-          </div>
+          {gameMode !== 'werewolf' && (
+            <>
+              <Scoreboard players={players} drawerId={turn?.drawerId} />
+              <div className="score-ref">
+                <div className="score-ref-title">得点表</div>
+                <div className="score-ref-row">
+                  <span>正解</span>
+                  <span className="score-ref-pts score-ref-pts--plus">回答者 ＋3 / 描き手 ＋2</span>
+                </div>
+                <div className="score-ref-row">
+                  <span>正解なし</span>
+                  <span className="score-ref-pts score-ref-pts--minus">描き手 −2</span>
+                </div>
+              </div>
+            </>
+          )}
           <Chat messages={messages} isDrawer={isDrawer} onSubmit={submitAnswer} />
         </div>
       </div>
