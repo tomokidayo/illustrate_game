@@ -1002,3 +1002,16 @@ a:hover { text-decoration: underline; }
 .vote-detail-voter { color: var(--text-h); font-weight: 600; flex: 1; }
 .vote-detail-arrow { color: var(--text-muted); flex-shrink: 0; }
 .vote-detail-target { color: var(--accent); font-weight: 600; flex: 1; text-align: right; }
+
+/* ── Rules mode label ─────────────────────────────────────────── */
+.rules-mode-label {
+  font-size: 15px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.rules-mode-label--normal   { background: var(--accent-light); color: var(--accent); }
+.rules-mode-label--werewolf { background: #fef2f2; color: #b91c1c; }
