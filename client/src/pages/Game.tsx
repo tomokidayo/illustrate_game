@@ -144,6 +144,17 @@ export default function Game() {
         </div>
         <div className="game-sidebar">
           <Scoreboard players={players} drawerId={turn?.drawerId} />
+          <div className="score-ref">
+            <div className="score-ref-title">得点表</div>
+            <div className="score-ref-row">
+              <span>正解</span>
+              <span className="score-ref-pts score-ref-pts--plus">回答者 ＋3 / 描き手 ＋2</span>
+            </div>
+            <div className="score-ref-row">
+              <span>正解なし</span>
+              <span className="score-ref-pts score-ref-pts--minus">描き手 −2</span>
+            </div>
+          </div>
           <Chat messages={messages} isDrawer={isDrawer} onSubmit={submitAnswer} />
         </div>
       </div>

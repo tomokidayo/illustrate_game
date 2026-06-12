@@ -808,3 +808,37 @@ a:hover { text-decoration: underline; }
 
 .rules-score--plus  { color: var(--green); }
 .rules-score--minus { color: var(--red); }
+
+/* ── Score reference ──────────────────────────────────────────── */
+.score-ref {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.score-ref-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.score-ref-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.score-ref-pts {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.score-ref-pts--plus  { color: var(--green); }
+.score-ref-pts--minus { color: var(--red); }
