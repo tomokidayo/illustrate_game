@@ -859,6 +859,41 @@ a:hover { text-decoration: underline; }
   cursor: pointer;
 }
 
+.duration-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.duration-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.duration-label {
+  min-width: 110px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.duration-options {
+  display: flex;
+  gap: 14px;
+}
+
+.duration-options label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
 .streak-counter {
   font-size: 13px;
   font-weight: 600;
