@@ -913,6 +913,9 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   color: var(--red);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .citizen-role-banner {
@@ -924,6 +927,19 @@ a:hover { text-decoration: underline; }
   font-weight: 600;
   color: var(--accent);
   flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-title {
+  font-weight: 600;
+}
+
+.role-hint {
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.85;
 }
 
 /* ── Judgment phase ───────────────────────────────────────────── */
