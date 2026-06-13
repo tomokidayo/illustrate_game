@@ -77,7 +77,7 @@ export interface UseGameReturn {
   clearSignal: number;
   isHost: boolean;
   send: (type: string, payload?: Record<string, unknown>) => void;
-  startGame: (mode?: GameMode) => void;
+  startGame: (mode?: GameMode, gameDuration?: number, turnDuration?: number) => void;
   submitAnswer: (answer: string) => void;
   sendDraw: (data: Omit<DrawData, 'roomCode'>) => void;
   sendClear: () => void;
@@ -322,9 +322,11 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   /**
    * ゲームを開始する
    * @param mode - ゲームモード（デフォルト: 'normal'）
+   * @param gameDuration - 1ゲームの秒数（180 / 240 / 300、デフォルト: 300）
+   * @param turnDuration - 1ターンの秒数（30 / 45 / 60、デフォルト: 30）
    */
-  const startGame = useCallback((mode: GameMode = 'normal') => {
-    send('game:start', { roomCode, mode });
+  const startGame = useCallback((mode: GameMode = 'normal', gameDuration = 300, turnDuration = 30) => {
+    send('game:start', { roomCode, mode, gameDuration, turnDuration });
   }, [send, roomCode]);
 
   const submitAnswer = useCallback((answer: string) => {

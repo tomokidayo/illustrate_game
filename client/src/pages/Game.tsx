@@ -17,6 +17,8 @@ export default function Game() {
   const navigate = useNavigate();
 
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
+  const [selectedGameDuration, setSelectedGameDuration] = useState(300);
+  const [selectedTurnDuration, setSelectedTurnDuration] = useState(30);
 
   const {
     gameStatus,
@@ -201,10 +203,44 @@ export default function Game() {
                   {' '}人狼モード
                 </label>
               </div>
+              <div className="duration-selector">
+                <div className="duration-group">
+                  <span className="duration-label">1ゲームの時間</span>
+                  <div className="duration-options">
+                    {([180, 240, 300] as const).map((sec) => (
+                      <label key={sec}>
+                        <input
+                          type="radio"
+                          value={sec}
+                          checked={selectedGameDuration === sec}
+                          onChange={() => setSelectedGameDuration(sec)}
+                        />
+                        {' '}{sec / 60}分
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className="duration-group">
+                  <span className="duration-label">1ターンの時間</span>
+                  <div className="duration-options">
+                    {([30, 45, 60] as const).map((sec) => (
+                      <label key={sec}>
+                        <input
+                          type="radio"
+                          value={sec}
+                          checked={selectedTurnDuration === sec}
+                          onChange={() => setSelectedTurnDuration(sec)}
+                        />
+                        {' '}{sec >= 60 ? `${sec / 60}分` : `${sec}秒`}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <button
                 className="btn btn-primary btn-full"
                 type="button"
-                onClick={() => startGame(selectedMode)}
+                onClick={() => startGame(selectedMode, selectedGameDuration, selectedTurnDuration)}
                 disabled={!canStart}
               >
                 ゲーム開始

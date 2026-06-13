@@ -31,6 +31,10 @@ interface RoomState {
   tickInterval: NodeJS.Timeout | null;
   turnTimeLeft: number;
   gameTimeLeft: number;
+  /** 1ゲームの秒数（180 / 240 / 300） */
+  gameDuration: number;
+  /** 1ターンの秒数（30 / 45 / 60） */
+  turnDuration: number;
   /** 未出題のお題キュー（空になったらシャッフルして再充填） */
   topicQueue: Topic[];
   /** ゲームモード */
@@ -296,7 +300,7 @@ function startTurn(room: RoomState): void {
   const picked = pickTopic(room);
   room.topic = picked.label;
   room.topicHiragana = normalizeToHiragana(picked.hiragana);
-  room.turnTimeLeft = 30;
+  room.turnTimeLeft = room.turnDuration;
 
   const drawer = room.players[room.drawerIndex];
   for (const p of room.players) {
@@ -347,6 +351,8 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       topicHiragana: '',
       status: status as RoomState['status'],
       tickInterval: null,
+      gameDuration: 300,
+      turnDuration: 30,
       turnTimeLeft: 30,
       gameTimeLeft: 300,
       topicQueue: [],
@@ -373,10 +379,13 @@ function handleRoomLeave(ws: AuthedWebSocket, payload: Record<string, unknown>):
   removePlayer(ws, payload.roomCode as string);
 }
 
+const VALID_GAME_DURATIONS = [180, 240, 300] as const;
+const VALID_TURN_DURATIONS = [30, 45, 60] as const;
+
 /**
  * game:start ハンドラ：ホストのみゲームを開始できる（3人以上必要）
  * @param ws - 送信元WebSocket
- * @param payload - roomCode, mode ('normal' | 'werewolf')
+ * @param payload - roomCode, mode ('normal' | 'werewolf'), gameDuration (180/240/300), turnDuration (30/45/60)
  */
 function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
   const room = rooms.get(payload.roomCode as string);
@@ -386,9 +395,18 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
 
   const mode = (payload.mode as 'normal' | 'werewolf') ?? 'normal';
+  const gameDuration = VALID_GAME_DURATIONS.includes(payload.gameDuration as typeof VALID_GAME_DURATIONS[number])
+    ? (payload.gameDuration as number)
+    : 300;
+  const turnDuration = VALID_TURN_DURATIONS.includes(payload.turnDuration as typeof VALID_TURN_DURATIONS[number])
+    ? (payload.turnDuration as number)
+    : 30;
+
   room.mode = mode;
+  room.gameDuration = gameDuration;
+  room.turnDuration = turnDuration;
   room.status = 'playing';
-  room.gameTimeLeft = 300;
+  room.gameTimeLeft = gameDuration;
   room.drawerIndex = 0;
   room.topicQueue = [];
   room.topicHiragana = '';
@@ -445,7 +463,7 @@ function handleGameAbort(ws: AuthedWebSocket, payload: Record<string, unknown>):
   if (!room.players.find(p => p.userId === ws.user!.id)) return;
   clearRoomTimers(room);
   room.status = 'waiting';
-  room.gameTimeLeft = 300;
+  room.gameTimeLeft = room.gameDuration;
   room.drawerIndex = 0;
   room.judgmentPhase = false;
   void pool.query("UPDATE rooms SET status = 'waiting' WHERE id = $1", [room.roomId]);
