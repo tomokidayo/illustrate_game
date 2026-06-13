@@ -8,14 +8,24 @@
 
 ## ゲームルール
 
+### ノーマルモード
+
 - **1ゲーム：** 5分
 - **1ターン：** 最大30秒（正解が出たら即終了）
 - **プレイ人数：** 3〜6名
 - **絵描き役：** 1名（全員をローテーション・繰り返し）
 - **回答者：** それ以外の全員（リアルタイムで回答入力）
-- **ポイント：** そのターンで最初に正解した1人が獲得
-- **お題：** 開発者側で事前に用意したリストからランダム出題
+- **ポイント：** 正解した回答者 +3pt、その絵描き役 +2pt、時間切れ時は絵描き役 -2pt
+- **お題：** 開発者側で事前に用意したリストからランダム出題（ゲーム内重複なし）
 - **正解が出たら：** 即座にターン終了 → 次の絵描き役に交代 → 新しいお題が設定される
+
+### 人狼モード
+
+- ランダムで1人が **人狼**、他は **市民** に割り当てられる（役割は非公開）
+- ゲーム中のポイント制はなく、**連続正解数**（ストリーク）でのみ勝敗を競う
+- **市民の勝利条件①：** 5連続正解（ジャッジメントなし即勝利）
+- **市民の勝利条件②：** ゲーム終了後のジャッジメントタイム（30秒）で人狼を多数決で特定
+- **人狼の勝利条件：** 投票で特定されない、または5連続正解を阻止してジャッジメントを生き残る
 
 ---
 
@@ -34,53 +44,55 @@
 ## ディレクトリ構成
 
 ```
-takebayashi-game/
+illust_game/
 ├── client/                        # フロントエンド（React + Vite）
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
-│   │   │   ├── Canvas.jsx         # お絵描きキャンバス
-│   │   │   ├── Chat.jsx           # 回答チャット欄
-│   │   │   ├── Timer.jsx          # タイマー
-│   │   │   ├── Scoreboard.jsx     # スコア表示
-│   │   │   └── PlayerList.jsx     # プレイヤー一覧
+│   │   │   ├── Canvas.tsx         # お絵描きキャンバス
+│   │   │   ├── Chat.tsx           # 回答チャット欄
+│   │   │   ├── Timer.tsx          # タイマー
+│   │   │   ├── Scoreboard.tsx     # スコア表示
+│   │   │   └── ProtectedRoute.tsx # 認証ガード
 │   │   ├── pages/
-│   │   │   ├── Login.jsx          # ログイン画面
-│   │   │   ├── Register.jsx       # ユーザー登録画面
-│   │   │   ├── Lobby.jsx          # ロビー画面
-│   │   │   └── Game.jsx           # ゲーム画面
+│   │   │   ├── Login.tsx          # ログイン画面
+│   │   │   ├── Register.tsx       # ユーザー登録画面
+│   │   │   ├── Lobby.tsx          # ロビー画面（ゲーム履歴表示含む）
+│   │   │   ├── Game.tsx           # ゲーム画面
+│   │   │   └── Rules.tsx          # ルール説明画面
 │   │   ├── hooks/
-│   │   │   ├── useWebSocket.js    # WebSocket接続管理
-│   │   │   └── useGame.js         # ゲーム状態管理
+│   │   │   ├── useWebSocket.ts    # WebSocket接続管理
+│   │   │   └── useGame.ts         # ゲーム状態管理
 │   │   ├── context/
-│   │   │   └── AuthContext.jsx    # ログイン状態管理
+│   │   │   └── AuthContext.tsx    # ログイン状態管理
 │   │   ├── utils/
-│   │   └── App.jsx
+│   │   │   └── api.ts             # REST APIクライアント
+│   │   └── App.tsx
 │   ├── index.html
-│   └── vite.config.js
+│   └── vite.config.ts
 │
 ├── server/                        # バックエンド（Node.js + Express）
 │   ├── controllers/
-│   │   ├── authController.js      # 登録・ログイン
-│   │   └── roomController.js      # ルーム管理
+│   │   ├── authController.ts      # 登録・ログイン
+│   │   ├── roomController.ts      # ルーム管理
+│   │   └── gameHistoryController.ts # ゲーム履歴取得
 │   ├── routes/
-│   │   ├── auth.js
-│   │   └── room.js
+│   │   ├── auth.ts
+│   │   ├── room.ts
+│   │   └── gameHistory.ts
 │   ├── websocket/
-│   │   ├── wsServer.js            # WebSocket接続管理
-│   │   └── gameManager.js         # ゲーム進行ロジック
-│   ├── models/
-│   │   ├── user.js
-│   │   └── room.js
+│   │   ├── wsServer.ts            # WebSocket接続管理（JWT認証付き）
+│   │   └── gameManager.ts         # ゲーム進行ロジック
 │   ├── middleware/
-│   │   └── authMiddleware.js      # JWT認証チェック
+│   │   └── authMiddleware.ts      # JWT認証チェック
 │   ├── db/
-│   │   └── index.js               # DB接続設定
+│   │   └── index.ts               # DB接続設定
 │   ├── data/
-│   │   └── topics.js              # お題リスト
-│   └── index.js                   # エントリーポイント
+│   │   └── topics.ts              # お題リスト（約70件）
+│   └── index.ts                   # エントリーポイント
 │
 ├── .env                           # 環境変数
+├── Procfile                       # デプロイ設定
 └── package.json
 ```
 
@@ -121,7 +133,15 @@ takebayashi-game/
 | expired_at | TIMESTAMP | トークンの有効期限 |
 | created_at | TIMESTAMP | ブラックリスト登録日時 |
 
-> フェーズ2で追加予定：`game_histories`、`scores`（累計スコア・ゲーム履歴）
+### game_histories
+| カラム名 | 型 | 説明 |
+|---|---|---|
+| id | UUID | 主キー |
+| room_id | UUID | ルームID |
+| user_id | UUID | ユーザーID |
+| score | INTEGER | 最終スコア |
+| rank | INTEGER | 順位 |
+| played_at | TIMESTAMP | プレイ日時 |
 
 ---
 
@@ -145,6 +165,12 @@ takebayashi-game/
 | POST | `/api/rooms/:roomCode/join` | ルーム参加 |
 | POST | `/api/rooms/:roomCode/leave` | ルーム退出 |
 
+### ゲーム履歴系（JWT認証必須）
+
+| メソッド | エンドポイント | 説明 |
+|---|---|---|
+| GET | `/api/game-histories` | ログインユーザーのゲーム履歴取得 |
+
 ---
 
 ## WebSocketイベント設計
@@ -161,11 +187,23 @@ takebayashi-game/
 
 | イベント名 | 送信元 | 内容 |
 |---|---|---|
-| `game:start` | ホスト→サーバー | ゲーム開始 |
+| `game:start` | ホスト→サーバー | ゲーム開始（`mode: 'normal' \| 'werewolf'` を含む） |
 | `game:turn_start` | サーバー→全員 | ターン開始・絵描き役とお題を通知（回答者にはお題を隠す） |
 | `game:turn_end` | サーバー→全員 | ターン終了（時間切れ or 正解） |
-| `game:end` | サーバー→全員 | ゲーム終了・最終スコア通知 |
+| `game:end` | サーバー→全員 | ノーマルモード終了・最終スコア通知 |
 | `game:tick` | サーバー→全員 | 残り時間を毎秒通知 |
+| `game:abort` | 誰でも→サーバー→全員 | ゲーム中断・waiting状態に戻る |
+
+### 人狼モード系
+
+| イベント名 | 送信元 | 内容 |
+|---|---|---|
+| `werewolf:role` | サーバー→各自 | 自分の役割通知（`'citizen' \| 'werewolf'`） |
+| `game:werewolf_end` | サーバー→全員 | 5連続正解による市民勝利（ジャッジメントなし） |
+| `judgment:start` | サーバー→全員 | ジャッジメントタイム開始（投票対象プレイヤー一覧） |
+| `judgment:vote` | クライアント→サーバー | 投票送信（`targetUserId`） |
+| `judgment:voted` | サーバー→全員 | 投票受付通知（票数更新） |
+| `judgment:result` | サーバー→全員 | 投票結果・人狼公開・勝敗通知 |
 
 ### キャンバス系
 
@@ -192,8 +230,9 @@ takebayashi-game/
 |---|---|---|
 | ログイン | `/login` | ユーザー名・パスワードでログイン |
 | ユーザー登録 | `/register` | 新規アカウント作成 |
-| ロビー | `/lobby` | ルーム作成・部屋番号で参加 |
+| ロビー | `/lobby` | ルーム作成・部屋番号で参加・ゲーム履歴表示 |
 | ゲーム | `/room/:roomCode` | ゲーム本体 |
+| ルール説明 | `/rules` | ノーマルモード・人狼モードのルール説明 |
 
 ### 画面遷移フロー
 
@@ -267,6 +306,7 @@ chore: ESLint設定を追加
 ## 将来対応（フェーズ2）
 
 - メールによるパスワード再設定機能
-- 累計スコア・ゲーム履歴の保存
 - プロフィール画面
 - SNSログイン（Google等）
+- ネットワーク切断時の自動再接続
+- サーバー再起動後のゲーム状態復元（現状はインメモリのみ）
