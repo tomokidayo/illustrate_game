@@ -275,12 +275,14 @@ export default function Game() {
 
       {myRole === 'werewolf' && (
         <div className="werewolf-role-banner">
-          🐺 あなたは人狼です！
+          <span className="role-title">🐺 あなたは人狼です！</span>
+          <span className="role-hint">正体がバレずに、5連続正解を阻止しよう！</span>
         </div>
       )}
       {myRole === 'citizen' && (
         <div className="citizen-role-banner">
-          👤 あなたは市民です
+          <span className="role-title">👤 あなたは市民です</span>
+          <span className="role-hint">仲間と協力して5連続正解を目指せ！</span>
         </div>
       )}
 
