@@ -1122,3 +1122,91 @@ a:hover { text-decoration: underline; }
   font-size: 15px;
   line-height: 1;
 }
+
+/* ── Friend system ────────────────────────────────────────────── */
+.profile-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 32px 16px;
+}
+
+.profile-layout {
+  max-width: 860px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 700px) {
+  .profile-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.friend-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.friend-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.friend-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-h);
+  margin-bottom: 12px;
+}
+
+.friend-request-form {
+  display: flex;
+  gap: 8px;
+}
+
+.friend-request-form .form-input {
+  flex: 1;
+}
+
+.friend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.friend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+
+.friend-avatar {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.friend-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
