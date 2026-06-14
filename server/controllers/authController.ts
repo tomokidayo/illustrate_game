@@ -40,7 +40,7 @@ export const login = async (req: Request, res: Response) => {
   }
 
   const { rows } = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
-  const user = rows[0] as { id: string; username: string; password_hash: string } | undefined;
+  const user = rows[0] as { id: string; username: string; password_hash: string; email: string | null; avatar: string | null } | undefined;
   if (!user || !(await bcrypt.compare(password, user.password_hash))) {
     res.status(401).json({ error: 'Invalid credentials' }); return;
   }
@@ -49,7 +49,7 @@ export const login = async (req: Request, res: Response) => {
     process.env.JWT_SECRET as string,
     { expiresIn: '7d' }
   );
-  res.json({ token, user: { id: user.id, username: user.username } });
+  res.json({ token, user: { id: user.id, username: user.username, email: user.email, avatar: user.avatar } });
 };
 
 export const logout = async (req: Request, res: Response) => {
@@ -63,7 +63,7 @@ export const logout = async (req: Request, res: Response) => {
 
 export const me = async (req: Request, res: Response) => {
   const { rows } = await pool.query(
-    'SELECT id, username, created_at FROM users WHERE id = $1',
+    'SELECT id, username, email, avatar, created_at FROM users WHERE id = $1',
     [req.user!.id]
   );
   res.json(rows[0]);

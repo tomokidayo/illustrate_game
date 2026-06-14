@@ -25,6 +25,7 @@ export default function Scoreboard({ players, drawerId }: ScoreboardProps) {
             <li key={p.userId} className={`scoreboard-item${isDrawerItem ? ' scoreboard-item--drawer' : ''}`}>
               <span className="scoreboard-name">
                 {isDrawerItem && <span title="絵描き役">✏️</span>}
+                {p.avatar && <span className="scoreboard-avatar">{p.avatar}</span>}
                 {p.username}
               </span>
               <span className="scoreboard-score">{p.score}pt</span>

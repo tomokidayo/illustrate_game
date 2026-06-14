@@ -72,7 +72,9 @@ export default function Lobby() {
       <header className="lobby-header">
         <div className="lobby-header-logo">🌲 お絵描きの森</div>
         <div className="lobby-header-user">
+          {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
           <span>{user?.username}</span>
+          <Link className="btn btn-ghost btn-sm" to="/profile">マイページ</Link>
           <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
           <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
         </div>
