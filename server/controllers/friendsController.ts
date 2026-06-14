@@ -39,7 +39,7 @@ export const sendRequest = async (req: Request, res: Response) => {
   }
 
   await pool.query(
-    'INSERT INTO friendships (requester_id, receiver_id) VALUES ($1, $2)',
+    'INSERT INTO friendships (requester_id, receiver_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
     [myId, targetId]
   );
   res.status(201).json({ message: 'フレンド申請を送りました' });
@@ -56,11 +56,16 @@ export const getFriends = async (req: Request, res: Response) => {
        f.id AS friendship_id,
        u.username,
        u.avatar,
-       r.room_code
+       active_room.room_code
      FROM friendships f
      JOIN users u ON u.id = CASE WHEN f.requester_id = $1 THEN f.receiver_id ELSE f.requester_id END
-     LEFT JOIN room_players rp ON rp.user_id = u.id
-     LEFT JOIN rooms r ON r.id = rp.room_id AND r.status = 'playing'
+     LEFT JOIN LATERAL (
+       SELECT r.room_code
+       FROM room_players rp
+       JOIN rooms r ON r.id = rp.room_id AND r.status = 'playing'
+       WHERE rp.user_id = u.id
+       LIMIT 1
+     ) active_room ON true
      WHERE (f.requester_id = $1 OR f.receiver_id = $1)
        AND f.status = 'accepted'`,
     [myId]

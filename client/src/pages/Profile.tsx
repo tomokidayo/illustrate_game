@@ -41,18 +41,24 @@ export default function Profile() {
   const [requestError, setRequestError] = useState('');
   const [requestSuccess, setRequestSuccess] = useState('');
   const [sendingRequest, setSendingRequest] = useState(false);
+  const [friendListError, setFriendListError] = useState('');
+  const [friendActionError, setFriendActionError] = useState('');
 
   useEffect(() => {
     void loadFriends();
   }, []);
 
   const loadFriends = async () => {
-    const [friendsRes, requestsRes] = await Promise.all([
-      api.get<Friend[]>('/api/friends'),
-      api.get<FriendRequest[]>('/api/friends/requests'),
-    ]);
-    setFriends(friendsRes.data);
-    setRequests(requestsRes.data);
+    try {
+      const [friendsRes, requestsRes] = await Promise.all([
+        api.get<Friend[]>('/api/friends'),
+        api.get<FriendRequest[]>('/api/friends/requests'),
+      ]);
+      setFriends(friendsRes.data);
+      setRequests(requestsRes.data);
+    } catch {
+      setFriendListError('フレンド情報の取得に失敗しました');
+    }
   };
 
   const handleProfileSubmit = async (e: FormEvent) => {
@@ -88,21 +94,32 @@ export default function Profile() {
   };
 
   const handleAccept = async (friendshipId: string) => {
-    await api.put(`/api/friends/${friendshipId}/accept`);
-    await loadFriends();
+    try {
+      setFriendActionError('');
+      await api.put(`/api/friends/${friendshipId}/accept`);
+      await loadFriends();
+    } catch (err) {
+      setFriendActionError(isAxiosError(err) ? err.response?.data?.error ?? '承認に失敗しました' : '承認に失敗しました');
+    }
   };
 
   const handleDelete = async (friendshipId: string) => {
-    await api.delete(`/api/friends/${friendshipId}`);
-    await loadFriends();
+    try {
+      setFriendActionError('');
+      await api.delete(`/api/friends/${friendshipId}`);
+      await loadFriends();
+    } catch (err) {
+      setFriendActionError(isAxiosError(err) ? err.response?.data?.error ?? '操作に失敗しました' : '操作に失敗しました');
+    }
   };
 
   const handleJoinRoom = async (roomCode: string) => {
     try {
+      setFriendActionError('');
       await api.post(`/api/rooms/${roomCode}/join`);
       navigate(`/room/${roomCode}`);
     } catch (err) {
-      alert(isAxiosError(err) ? err.response?.data?.error ?? '参加に失敗しました' : '参加に失敗しました');
+      setFriendActionError(isAxiosError(err) ? err.response?.data?.error ?? '参加に失敗しました' : '参加に失敗しました');
     }
   };
 
@@ -165,6 +182,8 @@ export default function Profile() {
 
         {/* ── フレンド ── */}
         <div className="friend-panel">
+          {friendListError && <p className="error-msg" role="alert">{friendListError}</p>}
+          {friendActionError && <p className="error-msg" role="alert">{friendActionError}</p>}
 
           {/* 申請フォーム */}
           <div className="friend-section">
