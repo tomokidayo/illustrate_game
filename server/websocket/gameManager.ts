@@ -50,6 +50,8 @@ interface RoomState {
   judgmentPhase: boolean;
   /** ジャッジメントタイマー */
   judgmentTimer: NodeJS.Timeout | null;
+  /** ターン終了処理中フラグ（二重呼び出し防止） */
+  isTurnEnding: boolean;
 }
 
 /** roomCode → RoomState */
@@ -261,6 +263,8 @@ function resolveJudgment(room: RoomState): void {
  */
 function endTurn(room: RoomState, correct: { userId: string; username: string } | null): void {
   if (room.status !== 'playing') return;
+  if (room.isTurnEnding) return;
+  room.isTurnEnding = true;
   clearRoomTimers(room);
 
   if (correct !== null) {
@@ -286,6 +290,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   if (room.gameTimeLeft <= 0) { endGame(room); return; }
 
   setTimeout(() => {
+    room.isTurnEnding = false;
     if (room.status !== 'playing' || room.players.length === 0) return;
     room.drawerIndex = (room.drawerIndex + 1) % room.players.length;
     startTurn(room);
@@ -298,6 +303,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
  */
 function startTurn(room: RoomState): void {
   if (room.players.length === 0) return;
+  clearRoomTimers(room);
   const picked = pickTopic(room);
   room.topic = picked.label;
   room.topicHiragana = normalizeToHiragana(picked.hiragana);
@@ -365,6 +371,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       votes: new Map(),
       judgmentPhase: false,
       judgmentTimer: null,
+      isTurnEnding: false,
     };
     rooms.set(roomCode, room);
   }
@@ -416,6 +423,7 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.consecutiveCorrect = 0;
   room.votes = new Map();
   room.judgmentPhase = false;
+  room.isTurnEnding = false;
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
 
