@@ -12,6 +12,7 @@ export type GameMode = 'normal' | 'werewolf';
 export interface Player {
   userId: string;
   username: string;
+  avatar: string | null;
   score: number;
 }
 

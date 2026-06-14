@@ -1066,3 +1066,59 @@ a:hover { text-decoration: underline; }
 
 .rules-mode-label--normal   { background: var(--accent-light); color: var(--accent); }
 .rules-mode-label--werewolf { background: #fef2f2; color: #b91c1c; }
+
+/* ── Profile page ─────────────────────────────────────────────── */
+.auth-subtitle {
+  text-align: center;
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.avatar-picker {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.avatar-option {
+  font-size: 22px;
+  padding: 4px;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color .15s;
+}
+
+.avatar-option:hover {
+  border-color: var(--accent-border);
+}
+
+.avatar-option--selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.success-msg {
+  padding: 10px 14px;
+  background: rgba(22,163,74,.08);
+  border: 1px solid rgba(22,163,74,.25);
+  border-radius: var(--radius-sm);
+  color: #16a34a;
+  font-size: 14px;
+}
+
+/* ── Lobby user avatar ────────────────────────────────────────── */
+.lobby-user-avatar {
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ── Scoreboard avatar ────────────────────────────────────────── */
+.scoreboard-avatar {
+  font-size: 15px;
+  line-height: 1;
+}

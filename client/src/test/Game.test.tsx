@@ -85,9 +85,9 @@ describe('接続中フェーズ', () => {
 
 describe('待機フェーズ', () => {
   const threePlayers = [
-    { userId: 'user-1', username: 'testuser', score: 0 },
-    { userId: 'user-2', username: 'player2', score: 0 },
-    { userId: 'user-3', username: 'player3', score: 0 },
+    { userId: 'user-1', username: 'testuser', avatar: null, score: 0 },
+    { userId: 'user-2', username: 'player2', avatar: null, score: 0 },
+    { userId: 'user-3', username: 'player3', avatar: null, score: 0 },
   ];
 
   test('ホストで3人以上いると開始ボタンが有効', () => {
@@ -141,8 +141,8 @@ describe('プレイフェーズ', () => {
     playingBase = buildGame({
       gameStatus: 'playing',
       players: [
-        { userId: 'user-1', username: 'testuser', score: 0 },
-        { userId: 'user-2', username: 'player2', score: 1 },
+        { userId: 'user-1', username: 'testuser', avatar: null, score: 0 },
+        { userId: 'user-2', username: 'player2', avatar: null, score: 1 },
       ],
       turn: { drawerId: 'user-2', drawerName: 'player2', turnTimeLeft: 25, gameTimeLeft: 280 },
     });
@@ -177,9 +177,9 @@ describe('プレイフェーズ', () => {
 
 describe('終了フェーズ', () => {
   const finishedPlayers = [
-    { userId: 'user-1', username: 'testuser', score: 3 },
-    { userId: 'user-2', username: 'player2', score: 5 },
-    { userId: 'user-3', username: 'player3', score: 1 },
+    { userId: 'user-1', username: 'testuser', avatar: null, score: 3 },
+    { userId: 'user-2', username: 'player2', avatar: null, score: 5 },
+    { userId: 'user-3', username: 'player3', avatar: null, score: 1 },
   ];
 
   test('最終スコアが降順で表示される', () => {

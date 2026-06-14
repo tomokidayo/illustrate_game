@@ -10,6 +10,7 @@ type WsMessage = { type: string; payload?: Record<string, unknown> };
 interface Player {
   userId: string;
   username: string;
+  avatar: string | null;
   score: number;
   ws: AuthedWebSocket;
 }
@@ -70,7 +71,7 @@ function broadcast(room: RoomState, type: string, payload?: unknown): void {
 
 /** プレイヤー一覧更新をブロードキャストする */
 function broadcastPlayersUpdated(room: RoomState): void {
-  const players = room.players.map(({ userId, username, score }) => ({ userId, username, score }));
+  const players = room.players.map(({ userId, username, avatar, score }) => ({ userId, username, avatar, score }));
   broadcast(room, 'room:players_updated', { players });
 }
 
@@ -330,15 +331,17 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   const roomCode = payload.roomCode as string;
   if (!roomCode || !ws.user) return;
 
-  const { rows } = await pool.query<{ id: string; host_user_id: string; status: string }>(
-    `SELECT r.id, r.host_user_id, r.status
-     FROM rooms r JOIN room_players rp ON rp.room_id = r.id
+  const { rows } = await pool.query<{ id: string; host_user_id: string; status: string; avatar: string | null }>(
+    `SELECT r.id, r.host_user_id, r.status, u.avatar
+     FROM rooms r
+     JOIN room_players rp ON rp.room_id = r.id
+     JOIN users u ON u.id = rp.user_id
      WHERE r.room_code = $1 AND rp.user_id = $2`,
     [roomCode, ws.user.id]
   );
   if (!rows[0]) { send(ws, 'error', { message: 'Not in room' }); return; }
 
-  const { id: roomId, host_user_id: hostUserId, status } = rows[0];
+  const { id: roomId, host_user_id: hostUserId, status, avatar } = rows[0];
   let room = rooms.get(roomCode);
   if (!room) {
     room = {
@@ -369,7 +372,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   // 再接続対応：既存エントリのスコアを引き継いで差し替え
   const prev = room.players.find(p => p.userId === ws.user!.id);
   room.players = room.players.filter(p => p.userId !== ws.user!.id);
-  room.players.push({ userId: ws.user.id, username: ws.user.username, score: prev?.score ?? 0, ws });
+  room.players.push({ userId: ws.user.id, username: ws.user.username, avatar, score: prev?.score ?? 0, ws });
   wsToRoom.set(ws, roomCode);
   broadcastPlayersUpdated(room);
 }

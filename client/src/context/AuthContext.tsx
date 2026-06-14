@@ -1,15 +1,18 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 import axios from 'axios';
 
-interface User {
+export interface User {
   id: string;
   username: string;
+  email?: string | null;
+  avatar?: string | null;
 }
 
 interface AuthContextValue {
   user: User | null;
   login: (userData: User, token: string) => void;
   logout: () => Promise<void>;
+  updateUser: (partial: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -41,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
+  const updateUser = (partial: Partial<User>) => {
+    setUser(prev => {
+      if (!prev) return prev;
+      const updated = { ...prev, ...partial };
+      localStorage.setItem('user', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const logout = async () => {
     const token = localStorage.getItem('token');
     try {
@@ -57,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
