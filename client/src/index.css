@@ -1124,47 +1124,6 @@ a:hover { text-decoration: underline; }
 }
 
 /* ── Friend system ────────────────────────────────────────────── */
-.profile-page {
-  min-height: 100vh;
-  background: var(--bg);
-  padding: 32px 16px;
-}
-
-.profile-layout {
-  max-width: 860px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 24px;
-  align-items: start;
-}
-
-@media (max-width: 700px) {
-  .profile-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
-.friend-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.friend-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-
-.friend-section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-h);
-  margin-bottom: 12px;
-}
-
 .friend-request-form {
   display: flex;
   gap: 8px;
