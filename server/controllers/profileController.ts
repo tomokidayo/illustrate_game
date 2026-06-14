@@ -3,6 +3,11 @@ import pool from '../db';
 
 const VALID_AVATARS = ['😀','😎','🤩','😴','🐱','🐶','🐺','🦊','🐻','🐼','🐸','🐙','🦁','🐯','🐨','🐮','🌸','🌻','⭐','🌈','🎨','🎮','🍕','🎵'];
 
+/**
+ * PUT /api/profile のハンドラ：メールアドレスとアバターを更新する
+ * @param req - email（任意）・avatar（任意）を含むリクエスト
+ * @param res - 更新後の id, username, email, avatar を返す
+ */
 export const updateProfile = async (req: Request, res: Response) => {
   const { email, avatar } = req.body as { email?: string; avatar?: string };
 

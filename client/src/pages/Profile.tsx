@@ -6,6 +6,9 @@ import api from '../utils/api';
 
 const AVATARS = ['😀','😎','🤩','😴','🐱','🐶','🐺','🦊','🐻','🐼','🐸','🐙','🦁','🐯','🐨','🐮','🌸','🌻','⭐','🌈','🎨','🎮','🍕','🎵'];
 
+/**
+ * マイページ：アイコン選択・メールアドレス設定を行うプロフィール画面
+ */
 export default function Profile() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -74,7 +77,7 @@ export default function Profile() {
           </div>
 
           {error && <p className="error-msg" role="alert">{error}</p>}
-          {success && <p className="success-msg">保存しました</p>}
+          {success && <p className="success-msg" role="status">保存しました</p>}
 
           <button className="btn btn-primary btn-full" type="submit" disabled={saving}>
             {saving ? '保存中...' : '保存する'}
