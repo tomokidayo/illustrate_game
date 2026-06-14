@@ -179,7 +179,7 @@ export default function Profile() {
             {profileError && <p className="error-msg" role="alert">{profileError}</p>}
             {profileSuccess && <p className="success-msg" role="status">保存しました</p>}
 
-            <button className="btn btn-primary" type="submit" disabled={saving}>
+            <button className="btn btn-primary btn-full" type="submit" disabled={saving}>
               {saving ? '保存中...' : '保存する'}
             </button>
           </form>
