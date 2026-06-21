@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import api from '../utils/api';
 
+/**
+ * 新規登録画面：ログイン画面と同じ森テーマデザイン
+ */
 export default function Register() {
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: '', password: '' });
@@ -39,30 +42,72 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <div className="auth-logo">🌲</div>
-        <h1 className="auth-title">お絵描きの森</h1>
-        <p className="auth-subtitle">新規アカウントを作成</p>
-        <form className="auth-form" onSubmit={handleSubmit}>
+    <div className="login-page">
+      <div className="login-header">
+        <h1 className="login-title">お絵描きの森</h1>
+        <p className="login-subtitle">新しい仲間として森に加わりましょう。</p>
+      </div>
+
+      <div className="login-card">
+        <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="username">ユーザー名</label>
-            <input className="form-input" id="username" name="username" type="text"
-              value={form.username} onChange={handleChange} autoComplete="username" placeholder="2〜20文字・英数字" />
+            <label className="login-label" htmlFor="username">ユーザー名</label>
+            <div className="login-input-wrapper">
+              <span className="login-input-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                </svg>
+              </span>
+              <input
+                className="login-input"
+                id="username"
+                name="username"
+                type="text"
+                value={form.username}
+                onChange={handleChange}
+                autoComplete="username"
+                placeholder="2〜20文字・英数字"
+              />
+            </div>
           </div>
+
           <div className="form-group">
-            <label className="form-label" htmlFor="password">パスワード</label>
-            <input className="form-input" id="password" name="password" type="password"
-              value={form.password} onChange={handleChange} autoComplete="new-password" placeholder="6文字以上" />
+            <label className="login-label" htmlFor="password">パスワード</label>
+            <div className="login-input-wrapper">
+              <span className="login-input-icon" aria-hidden="true">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                </svg>
+              </span>
+              <input
+                className="login-input"
+                id="password"
+                name="password"
+                type="password"
+                value={form.password}
+                onChange={handleChange}
+                autoComplete="new-password"
+                placeholder="6文字以上"
+              />
+            </div>
           </div>
+
           {error && <p className="error-msg" role="alert">{error}</p>}
-          <button className="btn btn-primary btn-full" type="submit" disabled={loading}>
-            {loading ? '登録中...' : '登録する'}
+
+          <button className="login-btn-primary" type="submit" disabled={loading}>
+            {loading ? '登録中...' : '仲間になる →'}
           </button>
         </form>
-        <p className="auth-footer">
-          すでにアカウントをお持ちの方は <Link to="/login">ログイン</Link>
-        </p>
+
+        <div className="login-footer">
+          <Link to="/login" className="login-register-link">すでに森の仲間の方はこちら（ログイン）</Link>
+        </div>
+      </div>
+
+      <div className="login-deco-icons" aria-hidden="true">
+        <span className="login-deco-icon login-deco-icon--teal">✏️</span>
+        <span className="login-deco-icon login-deco-icon--yellow">🖌️</span>
+        <span className="login-deco-icon login-deco-icon--blue">🎨</span>
       </div>
     </div>
   );

@@ -1,20 +1,20 @@
 /* ── Design tokens ────────────────────────────────────────────── */
 :root {
-  --accent:        #7c3aed;
-  --accent-hover:  #6d28d9;
-  --accent-light:  #f5f3ff;
-  --accent-border: rgba(124, 58, 237, 0.3);
+  --accent:        #2d5a47;
+  --accent-hover:  #234838;
+  --accent-light:  rgba(45, 90, 71, 0.08);
+  --accent-border: rgba(45, 90, 71, 0.25);
 
-  --bg:            #ffffff;
-  --bg-subtle:     #fafaf9;
-  --border:        #e7e5e4;
-  --shadow-sm:     0 1px 3px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
-  --shadow:        0 4px 12px rgba(0,0,0,.08);
-  --shadow-lg:     0 10px 24px rgba(0,0,0,.10);
+  --bg:            #faf5ec;
+  --bg-subtle:     #ede5d0;
+  --border:        #ddd4bc;
+  --shadow-sm:     0 1px 3px rgba(60,80,60,.07), 0 1px 2px rgba(60,80,60,.04);
+  --shadow:        0 4px 12px rgba(60,80,60,.10);
+  --shadow-lg:     0 10px 24px rgba(60,80,60,.12);
 
-  --text:          #57534e;
-  --text-h:        #1c1917;
-  --text-muted:    #a8a29e;
+  --text:          #3a4a3e;
+  --text-h:        #1a2e22;
+  --text-muted:    #6b7c6e;
 
   --green:         #16a34a;
   --red:           #dc2626;
@@ -33,21 +33,21 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --accent:        #a78bfa;
-    --accent-hover:  #c4b5fd;
-    --accent-light:  rgba(167,139,250,.12);
-    --accent-border: rgba(167,139,250,.35);
+    --accent:        #5a9476;
+    --accent-hover:  #6baa8a;
+    --accent-light:  rgba(90, 148, 118, 0.15);
+    --accent-border: rgba(90, 148, 118, 0.35);
 
-    --bg:            #18181b;
-    --bg-subtle:     #09090b;
-    --border:        #27272a;
+    --bg:            #1a2e22;
+    --bg-subtle:     #0f1e17;
+    --border:        #2d4535;
     --shadow-sm:     0 1px 3px rgba(0,0,0,.4);
     --shadow:        0 4px 12px rgba(0,0,0,.4);
     --shadow-lg:     0 10px 24px rgba(0,0,0,.5);
 
-    --text:          #a1a1aa;
-    --text-h:        #fafafa;
-    --text-muted:    #52525b;
+    --text:          #8aab90;
+    --text-h:        #d4e8da;
+    --text-muted:    #4d6b55;
 
     --green:         #22c55e;
     --red:           #f87171;
@@ -145,7 +145,7 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   gap: 24px;
   padding: 32px 20px 24px;
-  background: #ede5d0;
+  background: var(--bg-subtle);
   min-height: 100svh;
 }
 
@@ -156,24 +156,24 @@ a:hover { text-decoration: underline; }
 .login-title {
   font-size: 32px;
   font-weight: 800;
-  color: #2d5a47;
+  color: var(--accent);
   letter-spacing: -0.5px;
   margin-bottom: 6px;
 }
 
 .login-subtitle {
   font-size: 14px;
-  color: #6b7c6e;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: #faf5ec;
+  background: var(--bg);
   border-radius: 20px;
   padding: 32px 28px 28px;
-  box-shadow: 0 4px 20px rgba(60, 80, 60, 0.10);
+  box-shadow: var(--shadow-lg);
 }
 
 .login-form {
@@ -185,7 +185,7 @@ a:hover { text-decoration: underline; }
 .login-label {
   font-size: 14px;
   font-weight: 600;
-  color: #3a4a3e;
+  color: var(--text);
 }
 
 .login-input-wrapper {
@@ -206,10 +206,10 @@ a:hover { text-decoration: underline; }
 .login-input {
   width: 100%;
   padding: 13px 16px 13px 44px;
-  border: 1.5px solid #ddd4bc;
+  border: 1.5px solid var(--border);
   border-radius: 50px;
   font-size: 15px;
-  color: #3a4a3e;
+  color: var(--text);
   background: #fffdf7;
   outline: none;
   transition: border-color .15s, box-shadow .15s;
@@ -218,14 +218,14 @@ a:hover { text-decoration: underline; }
 .login-input::placeholder { color: #b0b8a8; }
 
 .login-input:focus {
-  border-color: #5a9476;
-  box-shadow: 0 0 0 3px rgba(90, 148, 118, 0.18);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .login-btn-primary {
   width: 100%;
   padding: 16px;
-  background: #2d5a47;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 50px;
@@ -238,8 +238,8 @@ a:hover { text-decoration: underline; }
 }
 
 .login-btn-primary:hover:not(:disabled) {
-  background: #234838;
-  box-shadow: 0 4px 12px rgba(45, 90, 71, 0.30);
+  background: var(--accent-hover);
+  box-shadow: var(--shadow);
 }
 
 .login-btn-primary:disabled {
@@ -255,7 +255,7 @@ a:hover { text-decoration: underline; }
 .login-register-link {
   font-size: 14px;
   font-weight: 600;
-  color: #2d5a47;
+  color: var(--accent);
   text-decoration: none;
 }
 
