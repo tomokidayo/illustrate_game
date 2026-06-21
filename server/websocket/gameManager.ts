@@ -365,6 +365,7 @@ function startTurn(room: RoomState): void {
       topic: p.userId === drawer.userId ? room.topic : undefined,
       turnTimeLeft: room.turnTimeLeft,
       gameTimeLeft: room.gameTimeLeft,
+      mode: room.mode,
       ...duoExtra,
     });
   }
