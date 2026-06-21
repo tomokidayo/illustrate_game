@@ -145,7 +145,7 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   gap: 24px;
   padding: 32px 20px 24px;
-  background: #ede5d0;
+  background: var(--bg-subtle);
   min-height: 100svh;
 }
 
@@ -156,24 +156,24 @@ a:hover { text-decoration: underline; }
 .login-title {
   font-size: 32px;
   font-weight: 800;
-  color: #2d5a47;
+  color: var(--accent);
   letter-spacing: -0.5px;
   margin-bottom: 6px;
 }
 
 .login-subtitle {
   font-size: 14px;
-  color: #6b7c6e;
+  color: var(--text-muted);
   margin: 0;
 }
 
 .login-card {
   width: 100%;
   max-width: 400px;
-  background: #faf5ec;
+  background: var(--bg);
   border-radius: 20px;
   padding: 32px 28px 28px;
-  box-shadow: 0 4px 20px rgba(60, 80, 60, 0.10);
+  box-shadow: var(--shadow-lg);
 }
 
 .login-form {
@@ -185,7 +185,7 @@ a:hover { text-decoration: underline; }
 .login-label {
   font-size: 14px;
   font-weight: 600;
-  color: #3a4a3e;
+  color: var(--text);
 }
 
 .login-input-wrapper {
@@ -206,10 +206,10 @@ a:hover { text-decoration: underline; }
 .login-input {
   width: 100%;
   padding: 13px 16px 13px 44px;
-  border: 1.5px solid #ddd4bc;
+  border: 1.5px solid var(--border);
   border-radius: 50px;
   font-size: 15px;
-  color: #3a4a3e;
+  color: var(--text);
   background: #fffdf7;
   outline: none;
   transition: border-color .15s, box-shadow .15s;
@@ -218,14 +218,14 @@ a:hover { text-decoration: underline; }
 .login-input::placeholder { color: #b0b8a8; }
 
 .login-input:focus {
-  border-color: #5a9476;
-  box-shadow: 0 0 0 3px rgba(90, 148, 118, 0.18);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
 }
 
 .login-btn-primary {
   width: 100%;
   padding: 16px;
-  background: #2d5a47;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 50px;
@@ -238,8 +238,8 @@ a:hover { text-decoration: underline; }
 }
 
 .login-btn-primary:hover:not(:disabled) {
-  background: #234838;
-  box-shadow: 0 4px 12px rgba(45, 90, 71, 0.30);
+  background: var(--accent-hover);
+  box-shadow: var(--shadow);
 }
 
 .login-btn-primary:disabled {
@@ -255,7 +255,7 @@ a:hover { text-decoration: underline; }
 .login-register-link {
   font-size: 14px;
   font-weight: 600;
-  color: #2d5a47;
+  color: var(--accent);
   text-decoration: none;
 }
 
