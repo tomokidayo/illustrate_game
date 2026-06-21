@@ -39,11 +39,15 @@ interface RoomState {
   /** 未出題のお題キュー（空になったらシャッフルして再充填） */
   topicQueue: Topic[];
   /** ゲームモード */
-  mode: 'normal' | 'werewolf';
+  mode: 'normal' | 'werewolf' | 'duo';
   /** 人狼役のユーザーID */
   werewolfUserId: string | null;
-  /** 連続正解ターン数（人狼モード用） */
+  /** 連続正解ターン数（人狼・デュオモード用） */
   consecutiveCorrect: number;
+  /** デュオモード：2人の合計獲得ポイント */
+  duoScore: number;
+  /** デュオモード：ゲーム中の最高連続正解数 */
+  duoBestStreak: number;
   /** 投票データ（voterId → targetUserId） */
   votes: Map<string, string>;
   /** ジャッジメントフェーズ中かどうか */
@@ -142,11 +146,41 @@ async function saveGameHistory(
   }
 }
 
+/**
+ * デュオモードのゲーム結果をDBに保存する
+ * @param room - 対象ルーム
+ */
+async function saveDuoHistory(room: RoomState): Promise<void> {
+  try {
+    const { rows: [history] } = await pool.query<{ id: string }>(
+      'INSERT INTO game_histories (room_id, room_code, mode, best_streak) VALUES ($1, $2, $3, $4) RETURNING id',
+      [room.roomId, room.roomCode, 'duo', room.duoBestStreak]
+    );
+    await Promise.all(
+      room.players.map(player =>
+        pool.query(
+          'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
+          [history.id, player.userId, player.username, room.duoScore, 1]
+        )
+      )
+    );
+  } catch (err) {
+    console.error('Failed to save duo history:', err);
+  }
+}
+
 /** ゲームを終了しDB・全員に通知する */
 function endGame(room: RoomState): void {
   clearRoomTimers(room);
   if (room.mode === 'werewolf') {
     startJudgmentTime(room);
+    return;
+  }
+  if (room.mode === 'duo') {
+    room.status = 'finished';
+    void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
+    void saveDuoHistory(room);
+    broadcast(room, 'game:duo_end', { score: room.duoScore, bestStreak: room.duoBestStreak });
     return;
   }
   room.status = 'finished';
@@ -268,8 +302,13 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   clearRoomTimers(room);
 
   if (correct !== null) {
-    // スコア付与は handleAnswerSubmit で実施済みのため、ここではカウントのみ
     room.consecutiveCorrect += 1;
+    if (room.mode === 'duo') {
+      // 正解 +1pt、5の倍数連続でボーナス +2pt
+      room.duoScore += 1;
+      if (room.consecutiveCorrect % 5 === 0) room.duoScore += 2;
+      if (room.consecutiveCorrect > room.duoBestStreak) room.duoBestStreak = room.consecutiveCorrect;
+    }
     // 人狼モード：5連続正解で市民勝利
     if (room.mode === 'werewolf' && room.consecutiveCorrect >= 5) {
       endWerewolfCitizensStreak(room, correct);
@@ -278,14 +317,20 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   } else {
     room.consecutiveCorrect = 0;
     // 正解者なしの場合は描き手 -2（通常モードのみ）
-    if (room.mode !== 'werewolf') {
+    if (room.mode !== 'werewolf' && room.mode !== 'duo') {
       const drawer = room.players[room.drawerIndex];
       if (drawer) drawer.score -= 2;
       broadcastPlayersUpdated(room);
     }
   }
 
-  broadcast(room, 'game:turn_end', { topic: room.topic, correct });
+  const turnEndPayload: Record<string, unknown> = { topic: room.topic, correct };
+  if (room.mode === 'duo') {
+    turnEndPayload.duoScore = room.duoScore;
+    turnEndPayload.duoStreak = room.consecutiveCorrect;
+    turnEndPayload.duoBestStreak = room.duoBestStreak;
+  }
+  broadcast(room, 'game:turn_end', turnEndPayload);
 
   if (room.gameTimeLeft <= 0) { endGame(room); return; }
 
@@ -310,6 +355,9 @@ function startTurn(room: RoomState): void {
   room.turnTimeLeft = room.turnDuration;
 
   const drawer = room.players[room.drawerIndex];
+  const duoExtra = room.mode === 'duo'
+    ? { duoScore: room.duoScore, duoStreak: room.consecutiveCorrect, duoBestStreak: room.duoBestStreak }
+    : {};
   for (const p of room.players) {
     send(p.ws, 'game:turn_start', {
       drawerId: drawer.userId,
@@ -317,6 +365,7 @@ function startTurn(room: RoomState): void {
       topic: p.userId === drawer.userId ? room.topic : undefined,
       turnTimeLeft: room.turnTimeLeft,
       gameTimeLeft: room.gameTimeLeft,
+      ...duoExtra,
     });
   }
 
@@ -372,6 +421,8 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       judgmentPhase: false,
       judgmentTimer: null,
       isTurnEnding: false,
+      duoScore: 0,
+      duoBestStreak: 0,
     };
     rooms.set(roomCode, room);
   }
@@ -393,24 +444,33 @@ const VALID_GAME_DURATIONS = [180, 240, 300] as const;
 const VALID_TURN_DURATIONS = [30, 45, 60] as const;
 
 /**
- * game:start ハンドラ：ホストのみゲームを開始できる（3人以上必要）
+ * game:start ハンドラ：ホストのみゲームを開始できる
  * @param ws - 送信元WebSocket
- * @param payload - roomCode, mode ('normal' | 'werewolf'), gameDuration (180/240/300), turnDuration (30/45/60)
+ * @param payload - roomCode, mode ('normal' | 'werewolf' | 'duo'), gameDuration, turnDuration
  */
 function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
   const room = rooms.get(payload.roomCode as string);
   if (!room || !ws.user) return;
   if (room.hostUserId !== ws.user.id) { send(ws, 'error', { message: 'Only host can start' }); return; }
   if (room.status !== 'waiting') { send(ws, 'error', { message: 'Game already started' }); return; }
-  if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
 
-  const mode = (payload.mode as 'normal' | 'werewolf') ?? 'normal';
-  const gameDuration = VALID_GAME_DURATIONS.includes(payload.gameDuration as typeof VALID_GAME_DURATIONS[number])
-    ? (payload.gameDuration as number)
-    : 300;
-  const turnDuration = VALID_TURN_DURATIONS.includes(payload.turnDuration as typeof VALID_TURN_DURATIONS[number])
-    ? (payload.turnDuration as number)
-    : 30;
+  const mode = (payload.mode as 'normal' | 'werewolf' | 'duo') ?? 'normal';
+
+  if (mode === 'duo') {
+    if (room.players.length !== 2) { send(ws, 'error', { message: 'デュオモードは2名専用です' }); return; }
+  } else {
+    if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
+  }
+
+  // デュオモードは時間固定（300秒 / 30秒）
+  const gameDuration = mode === 'duo' ? 300
+    : VALID_GAME_DURATIONS.includes(payload.gameDuration as typeof VALID_GAME_DURATIONS[number])
+      ? (payload.gameDuration as number)
+      : 300;
+  const turnDuration = mode === 'duo' ? 30
+    : VALID_TURN_DURATIONS.includes(payload.turnDuration as typeof VALID_TURN_DURATIONS[number])
+      ? (payload.turnDuration as number)
+      : 30;
 
   room.mode = mode;
   room.gameDuration = gameDuration;
@@ -424,15 +484,14 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.votes = new Map();
   room.judgmentPhase = false;
   room.isTurnEnding = false;
+  room.duoScore = 0;
+  room.duoBestStreak = 0;
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
 
   if (mode === 'werewolf') {
-    // ランダムに1人を人狼に選ぶ
     const werewolfIndex = Math.floor(Math.random() * room.players.length);
     room.werewolfUserId = room.players[werewolfIndex].userId;
-
-    // 各プレイヤーに役職を通知
     for (const p of room.players) {
       send(p.ws, 'werewolf:role', {
         role: p.userId === room.werewolfUserId ? 'werewolf' : 'citizen',
@@ -493,8 +552,8 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
 
   const normalizedAnswer = normalizeToHiragana(answer);
   if (normalizedAnswer === room.topicHiragana || answer.trim() === room.topic) {
-    if (room.mode !== 'werewolf') {
-      // 通常モード：スコア付与
+    if (room.mode === 'normal') {
+      // 通常モード：個人スコア付与
       const player = room.players.find(p => p.userId === ws.user!.id);
       if (player) player.score += 3;
       const drawer = room.players[room.drawerIndex];
@@ -502,7 +561,7 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
       broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 3 });
       broadcastPlayersUpdated(room);
     } else {
-      // 人狼モード：スコアなし
+      // 人狼・デュオモード：個人スコアなし（デュオはendTurn内で加算）
       broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: 0 });
     }
     endTurn(room, { userId: ws.user.id, username: ws.user.username });

@@ -987,6 +987,98 @@ a:hover { text-decoration: underline; }
 .score-ref-pts--plus  { color: var(--green); }
 .score-ref-pts--minus { color: var(--red); }
 
+/* ── Duo mode ─────────────────────────────────────────────────── */
+.duo-mode-badge {
+  text-align: center;
+  padding: 12px 16px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.duo-score-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.duo-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.duo-score-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.duo-score-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.duo-score-value--best { color: var(--accent); }
+
+.duo-score-unit {
+  font-size: 13px;
+  font-weight: 500;
+  margin-left: 2px;
+  color: var(--text-muted);
+}
+
+.duo-score-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+
+.duo-result-score {
+  font-size: 64px;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1;
+  margin: 16px 0 4px;
+}
+
+.duo-result-unit {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.duo-result-streak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.duo-result-streak-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.duo-result-streak-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
 /* ── Werewolf mode ────────────────────────────────────────────── */
 .mode-selector {
   display: flex;
