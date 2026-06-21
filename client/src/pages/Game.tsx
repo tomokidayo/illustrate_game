@@ -46,6 +46,10 @@ export default function Game() {
     hasVoted,
     werewolfResult,
     sendVote,
+    duoStreak,
+    duoBestStreak,
+    duoScore,
+    duoResult,
   } = useGame(roomCode!, user!.id);
 
   function handleAbort() {
@@ -67,6 +71,26 @@ export default function Game() {
           <div className="finished-icon">🚫</div>
           <h1 className="finished-title">ゲームを中断しました</h1>
           <p className="waiting-hint">{abortedBy} さんがゲームを中断しました</p>
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
+            ロビーに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── デュオモード終了画面 ────────────────────────────────────────────────────
+  if (gameStatus === 'finished' && gameMode === 'duo' && duoResult) {
+    return (
+      <div className="finished-page">
+        <div className="finished-card">
+          <div className="finished-icon">🎉</div>
+          <h1 className="finished-title">お疲れさまでした！</h1>
+          <div className="duo-result-score">{duoResult.score}<span className="duo-result-unit">pt</span></div>
+          <div className="duo-result-streak">
+            <span className="duo-result-streak-label">最高連続正解</span>
+            <span className="duo-result-streak-value">🔥 {duoResult.bestStreak} 連続</span>
+          </div>
           <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
             ロビーに戻る
           </button>
@@ -170,7 +194,8 @@ export default function Game() {
 
   // ─── 待機フェーズ ────────────────────────────────────────────────────────────
   if (gameStatus === 'waiting') {
-    const canStart = players.length >= 3;
+    const isDuo = players.length === 2;
+    const canStart = isDuo || players.length >= 3;
     return (
       <div className="waiting-page">
         <div className="waiting-card">
@@ -179,68 +204,79 @@ export default function Game() {
           <p className="waiting-code">{roomCode}</p>
           <Scoreboard players={players} />
           <p className="waiting-hint">
-            {players.length} 人接続中（ゲーム開始には 3 人以上必要）
+            {isDuo
+              ? '2人接続中 — デュオモードで遊べます'
+              : `${players.length} 人接続中（ゲーム開始には 3 人以上必要）`}
           </p>
           {isHost ? (
             <>
-              <div className="mode-selector">
-                <label>
-                  <input
-                    type="radio"
-                    value="normal"
-                    checked={selectedMode === 'normal'}
-                    onChange={() => setSelectedMode('normal')}
-                  />
-                  {' '}通常モード
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    value="werewolf"
-                    checked={selectedMode === 'werewolf'}
-                    onChange={() => setSelectedMode('werewolf')}
-                  />
-                  {' '}人狼モード
-                </label>
-              </div>
-              <div className="duration-selector">
-                <div className="duration-group">
-                  <span className="duration-label">1ゲームの時間</span>
-                  <div className="duration-options">
-                    {([180, 240, 300] as const).map((sec) => (
-                      <label key={sec}>
-                        <input
-                          type="radio"
-                          value={sec}
-                          checked={selectedGameDuration === sec}
-                          onChange={() => setSelectedGameDuration(sec)}
-                        />
-                        {' '}{sec / 60}分
-                      </label>
-                    ))}
+              {isDuo ? (
+                <div className="duo-mode-badge">🤝 デュオモード（2人協力）</div>
+              ) : (
+                <>
+                  <div className="mode-selector">
+                    <label>
+                      <input
+                        type="radio"
+                        value="normal"
+                        checked={selectedMode === 'normal'}
+                        onChange={() => setSelectedMode('normal')}
+                      />
+                      {' '}通常モード
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="werewolf"
+                        checked={selectedMode === 'werewolf'}
+                        onChange={() => setSelectedMode('werewolf')}
+                      />
+                      {' '}人狼モード
+                    </label>
                   </div>
-                </div>
-                <div className="duration-group">
-                  <span className="duration-label">1ターンの時間</span>
-                  <div className="duration-options">
-                    {([30, 45, 60] as const).map((sec) => (
-                      <label key={sec}>
-                        <input
-                          type="radio"
-                          value={sec}
-                          checked={selectedTurnDuration === sec}
-                          onChange={() => setSelectedTurnDuration(sec)}
-                        />
-                        {' '}{sec >= 60 ? `${sec / 60}分` : `${sec}秒`}
-                      </label>
-                    ))}
+                  <div className="duration-selector">
+                    <div className="duration-group">
+                      <span className="duration-label">1ゲームの時間</span>
+                      <div className="duration-options">
+                        {([180, 240, 300] as const).map((sec) => (
+                          <label key={sec}>
+                            <input
+                              type="radio"
+                              value={sec}
+                              checked={selectedGameDuration === sec}
+                              onChange={() => setSelectedGameDuration(sec)}
+                            />
+                            {' '}{sec / 60}分
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="duration-group">
+                      <span className="duration-label">1ターンの時間</span>
+                      <div className="duration-options">
+                        {([30, 45, 60] as const).map((sec) => (
+                          <label key={sec}>
+                            <input
+                              type="radio"
+                              value={sec}
+                              checked={selectedTurnDuration === sec}
+                              onChange={() => setSelectedTurnDuration(sec)}
+                            />
+                            {' '}{sec >= 60 ? `${sec / 60}分` : `${sec}秒`}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                </>
+              )}
               <button
                 className="btn btn-primary btn-full"
                 type="button"
-                onClick={() => startGame(selectedMode, selectedGameDuration, selectedTurnDuration)}
+                onClick={() => isDuo
+                  ? startGame('duo', 300, 30)
+                  : startGame(selectedMode, selectedGameDuration, selectedTurnDuration)
+                }
                 disabled={!canStart}
               >
                 ゲーム開始
@@ -264,9 +300,10 @@ export default function Game() {
           絵描き：<strong>{turn?.drawerName ?? '—'}</strong>
         </span>
         {gameMode === 'werewolf' && (
-          <div className="streak-counter">
-            🔥 {consecutiveCorrect}/5 連続正解
-          </div>
+          <div className="streak-counter">🔥 {consecutiveCorrect}/5 連続正解</div>
+        )}
+        {gameMode === 'duo' && (
+          <div className="streak-counter">🔥 {duoStreak}連続 / {duoScore}pt</div>
         )}
         <button className="btn btn-ghost btn-sm" type="button" onClick={handleAbort}>
           中断
@@ -303,7 +340,23 @@ export default function Game() {
           />
         </div>
         <div className="game-sidebar">
-          {gameMode !== 'werewolf' && (
+          {gameMode === 'duo' ? (
+            <div className="duo-score-panel">
+              <div className="duo-score-row">
+                <span className="duo-score-label">合計スコア</span>
+                <span className="duo-score-value">{duoScore}<span className="duo-score-unit">pt</span></span>
+              </div>
+              <div className="duo-score-row">
+                <span className="duo-score-label">🔥 現在の連続</span>
+                <span className="duo-score-value">{duoStreak}連続</span>
+              </div>
+              <div className="duo-score-row">
+                <span className="duo-score-label">最高連続</span>
+                <span className="duo-score-value duo-score-value--best">{duoBestStreak}連続</span>
+              </div>
+              <div className="duo-score-hint">5連続達成でボーナス ＋2pt</div>
+            </div>
+          ) : gameMode !== 'werewolf' ? (
             <>
               <Scoreboard players={players} drawerId={turn?.drawerId} />
               <div className="score-ref">
@@ -318,7 +371,7 @@ export default function Game() {
                 </div>
               </div>
             </>
-          )}
+          ) : null}
           <Chat messages={messages} isDrawer={isDrawer} onSubmit={submitAnswer} />
         </div>
       </div>
