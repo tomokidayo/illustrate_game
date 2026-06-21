@@ -107,7 +107,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="login-deco-icons">
+      <div className="login-deco-icons" aria-hidden="true">
         <span className="login-deco-icon login-deco-icon--teal">✏️</span>
         <span className="login-deco-icon login-deco-icon--yellow">🖌️</span>
         <span className="login-deco-icon login-deco-icon--blue">🎨</span>
