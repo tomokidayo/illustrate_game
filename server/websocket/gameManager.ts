@@ -373,13 +373,7 @@ function startTurn(room: RoomState): void {
     if (room.status !== 'playing') { clearRoomTimers(room); return; }
     room.turnTimeLeft -= 1;
     room.gameTimeLeft -= 1;
-    const tickPayload: Record<string, unknown> = { turnTimeLeft: room.turnTimeLeft, gameTimeLeft: room.gameTimeLeft };
-    if (room.mode === 'duo') {
-      tickPayload.duoScore = room.duoScore;
-      tickPayload.duoStreak = room.consecutiveCorrect;
-      tickPayload.duoBestStreak = room.duoBestStreak;
-    }
-    broadcast(room, 'game:tick', tickPayload);
+    broadcast(room, 'game:tick', { turnTimeLeft: room.turnTimeLeft, gameTimeLeft: room.gameTimeLeft });
     if (room.gameTimeLeft <= 0) { endGame(room); return; }
     if (room.turnTimeLeft <= 0) { endTurn(room, null); }
   }, 1000);

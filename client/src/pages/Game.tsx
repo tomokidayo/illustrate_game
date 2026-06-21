@@ -195,6 +195,7 @@ export default function Game() {
   // ─── 待機フェーズ ────────────────────────────────────────────────────────────
   if (gameStatus === 'waiting') {
     const isDuo = players.length === 2;
+    // デュオは2人固定で開始可能、通常/人狼は3人以上必要
     const canStart = isDuo || players.length >= 3;
     return (
       <div className="waiting-page">

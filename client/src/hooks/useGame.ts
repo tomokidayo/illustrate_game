@@ -211,9 +211,6 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         const turnTimeLeft = payload.turnTimeLeft as number;
         const gameTimeLeft = payload.gameTimeLeft as number;
         setTurn(prev => prev ? { ...prev, turnTimeLeft, gameTimeLeft } : prev);
-        if (payload.duoScore !== undefined) setDuoScore(payload.duoScore as number);
-        if (payload.duoStreak !== undefined) setDuoStreak(payload.duoStreak as number);
-        if (payload.duoBestStreak !== undefined) setDuoBestStreak(payload.duoBestStreak as number);
         break;
       }
 
