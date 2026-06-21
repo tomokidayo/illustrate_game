@@ -201,6 +201,7 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         setTurn({ drawerId, drawerName, topic, turnTimeLeft, gameTimeLeft });
         setGameStatus('playing');
         setTurnEndInfo(null);
+        if (payload.mode) setGameMode(payload.mode as GameMode);
         if (payload.duoScore !== undefined) setDuoScore(payload.duoScore as number);
         if (payload.duoStreak !== undefined) setDuoStreak(payload.duoStreak as number);
         if (payload.duoBestStreak !== undefined) setDuoBestStreak(payload.duoBestStreak as number);
