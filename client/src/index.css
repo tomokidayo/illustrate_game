@@ -986,6 +986,25 @@ a:hover { text-decoration: underline; }
 
 .score-ref-pts--plus  { color: var(--green); }
 .score-ref-pts--minus { color: var(--red); }
+.score-ref-pts--zero  { color: var(--text-muted); }
+
+/* ── Difficulty badge ──────────────────────────────────────────── */
+.difficulty-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.difficulty-badge--1 { background: #e8f5e9; color: #2e7d32; }
+.difficulty-badge--2 { background: #e3f2fd; color: #1565c0; }
+.difficulty-badge--3 { background: #fff3e0; color: #e65100; }
+.difficulty-badge--4 { background: #fce4ec; color: #b71c1c; }
+.difficulty-badge--inline { margin-left: 10px; font-size: 12px; }
 
 /* ── Duo mode ─────────────────────────────────────────────────── */
 .duo-mode-badge {

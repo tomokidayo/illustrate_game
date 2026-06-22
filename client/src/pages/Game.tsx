@@ -7,6 +7,13 @@ import Chat from '../components/Chat';
 import Timer from '../components/Timer';
 import Scoreboard from '../components/Scoreboard';
 
+const DIFFICULTY_LABEL: Record<number, string> = {
+  1: 'かんたん',
+  2: 'ふつう',
+  3: 'むずかしい',
+  4: '超むずかしい',
+};
+
 /**
  * ゲーム画面ページ
  * @description ルームに接続し、待機・プレイ・終了の各フェーズを表示する
@@ -327,6 +334,9 @@ export default function Game() {
       {isDrawer && turn?.topic && (
         <div className="game-drawer-banner">
           ✏️ あなたが絵描き役です！　お題：{turn.topic}
+          <span className={`difficulty-badge difficulty-badge--${turn.difficulty} difficulty-badge--inline`}>
+            {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
+          </span>
         </div>
       )}
 

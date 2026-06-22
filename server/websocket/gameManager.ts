@@ -6,6 +6,7 @@ import topics, { Topic } from '../data/topics';
 /** WebSocketメッセージの共通形式 */
 type WsMessage = { type: string; payload?: Record<string, unknown> };
 
+
 /** ルーム内の1プレイヤー */
 interface Player {
   userId: string;
@@ -54,6 +55,8 @@ interface RoomState {
   judgmentPhase: boolean;
   /** ジャッジメントタイマー */
   judgmentTimer: NodeJS.Timeout | null;
+  /** 現在のお題の難易度（1〜4） */
+  topicDifficulty: number;
   /** ターン終了処理中フラグ（二重呼び出し防止） */
   isTurnEnding: boolean;
 }
@@ -316,7 +319,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
     }
   } else {
     room.consecutiveCorrect = 0;
-    // 正解者なしの場合は描き手 -2（通常モードのみ）
+    // 正解者なしの場合は描き手 -2pt（通常モードのみ）
     if (room.mode !== 'werewolf' && room.mode !== 'duo') {
       const drawer = room.players[room.drawerIndex];
       if (drawer) drawer.score -= 2;
@@ -352,6 +355,7 @@ function startTurn(room: RoomState): void {
   const picked = pickTopic(room);
   room.topic = picked.label;
   room.topicHiragana = normalizeToHiragana(picked.hiragana);
+  room.topicDifficulty = picked.difficulty;
   room.turnTimeLeft = room.turnDuration;
 
   const drawer = room.players[room.drawerIndex];
@@ -366,6 +370,7 @@ function startTurn(room: RoomState): void {
       turnTimeLeft: room.turnTimeLeft,
       gameTimeLeft: room.gameTimeLeft,
       mode: room.mode,
+      difficulty: room.topicDifficulty,
       ...duoExtra,
     });
   }
@@ -421,6 +426,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       votes: new Map(),
       judgmentPhase: false,
       judgmentTimer: null,
+      topicDifficulty: 1,
       isTurnEnding: false,
       duoScore: 0,
       duoBestStreak: 0,
@@ -554,7 +560,7 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
   const normalizedAnswer = normalizeToHiragana(answer);
   if (normalizedAnswer === room.topicHiragana || answer.trim() === room.topic) {
     if (room.mode === 'normal') {
-      // 通常モード：個人スコア付与
+      // 通常モード：個人スコア付与（回答者 +3 / 描き手 +2）
       const player = room.players.find(p => p.userId === ws.user!.id);
       if (player) player.score += 3;
       const drawer = room.players[room.drawerIndex];
