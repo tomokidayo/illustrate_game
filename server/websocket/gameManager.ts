@@ -8,8 +8,8 @@ type WsMessage = { type: string; payload?: Record<string, unknown> };
 
 /** デュオモード：レベル別設定 */
 const DUO_LEVEL_SETTINGS: Record<number, { gameDuration: number; turnDuration: number; difficulty: number }> = {
-  1: { gameDuration: 180, turnDuration: 30, difficulty: 1 },
-  2: { gameDuration: 180, turnDuration: 30, difficulty: 2 },
+  1: { gameDuration: 240, turnDuration: 30, difficulty: 1 },
+  2: { gameDuration: 240, turnDuration: 30, difficulty: 2 },
   3: { gameDuration: 240, turnDuration: 30, difficulty: 3 },
   4: { gameDuration: 300, turnDuration: 45, difficulty: 4 },
 };
@@ -341,7 +341,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   if (correct !== null) {
     if (room.mode === 'duo') {
       room.duoCorrectCount += 1;
-      if (room.duoCorrectCount >= 10) {
+      if (room.duoCorrectCount >= 7) {
         endDuoClear(room, correct);
         return;
       }
