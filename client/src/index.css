@@ -339,6 +339,7 @@ a:hover { text-decoration: underline; }
 }
 
 .lobby-header {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -363,6 +364,77 @@ a:hover { text-decoration: underline; }
   gap: 12px;
   font-size: 14px;
   color: var(--text);
+}
+
+/* ── Hamburger（モバイル専用） ─────────────────────────────────── */
+.lobby-hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  flex-shrink: 0;
+}
+.lobby-hamburger:hover { background: var(--bg-subtle); }
+.lobby-hamburger-icon { font-size: 18px; line-height: 1; }
+
+.lobby-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.lobby-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.lobby-menu-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 20px;
+  font-size: 14px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+.lobby-menu-username { font-weight: 600; color: var(--text-h); }
+
+.lobby-menu-item {
+  display: block;
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 14px;
+  color: var(--text);
+  text-decoration: none;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.lobby-menu-item:last-child { border-bottom: none; }
+.lobby-menu-item:hover { background: var(--bg-subtle); }
+.lobby-menu-item--danger { color: var(--red); }
+
+@media (max-width: 540px) {
+  .lobby-header-user { display: none; }
+  .lobby-hamburger  { display: flex; }
 }
 
 .lobby-main {
