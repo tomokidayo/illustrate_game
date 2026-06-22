@@ -6,6 +6,14 @@ import topics, { Topic } from '../data/topics';
 /** WebSocketメッセージの共通形式 */
 type WsMessage = { type: string; payload?: Record<string, unknown> };
 
+/** デュオモード：レベル別設定 */
+const DUO_LEVEL_SETTINGS: Record<number, { gameDuration: number; turnDuration: number; difficulty: number }> = {
+  1: { gameDuration: 180, turnDuration: 30, difficulty: 1 },
+  2: { gameDuration: 180, turnDuration: 30, difficulty: 2 },
+  3: { gameDuration: 240, turnDuration: 30, difficulty: 3 },
+  4: { gameDuration: 300, turnDuration: 45, difficulty: 4 },
+};
+
 
 /** ルーム内の1プレイヤー */
 interface Player {
@@ -45,10 +53,10 @@ interface RoomState {
   werewolfUserId: string | null;
   /** 連続正解ターン数（人狼・デュオモード用） */
   consecutiveCorrect: number;
-  /** デュオモード：2人の合計獲得ポイント */
-  duoScore: number;
-  /** デュオモード：ゲーム中の最高連続正解数 */
-  duoBestStreak: number;
+  /** デュオモード：選択されたステージレベル（1〜4） */
+  duoLevel: 1 | 2 | 3 | 4 | null;
+  /** デュオモード：現在の正解数（10問でクリア） */
+  duoCorrectCount: number;
   /** 投票データ（voterId → targetUserId） */
   votes: Map<string, string>;
   /** ジャッジメントフェーズ中かどうか */
@@ -110,7 +118,10 @@ function normalizeToHiragana(s: string): string {
  */
 function pickTopic(room: RoomState): Topic {
   if (room.topicQueue.length === 0) {
-    room.topicQueue = shuffle([...topics]);
+    const available = room.duoLevel !== null
+      ? topics.filter(t => t.difficulty === (DUO_LEVEL_SETTINGS[room.duoLevel!]?.difficulty ?? room.duoLevel))
+      : topics;
+    room.topicQueue = shuffle([...available]);
   }
   return room.topicQueue.pop()!;
 }
@@ -152,18 +163,19 @@ async function saveGameHistory(
 /**
  * デュオモードのゲーム結果をDBに保存する
  * @param room - 対象ルーム
+ * @param cleared - クリア成功かどうか
  */
-async function saveDuoHistory(room: RoomState): Promise<void> {
+async function saveDuoHistory(room: RoomState, cleared: boolean): Promise<void> {
   try {
     const { rows: [history] } = await pool.query<{ id: string }>(
-      'INSERT INTO game_histories (room_id, room_code, mode, best_streak) VALUES ($1, $2, $3, $4) RETURNING id',
-      [room.roomId, room.roomCode, 'duo', room.duoBestStreak]
+      'INSERT INTO game_histories (room_id, room_code, mode, best_streak, duo_level) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+      [room.roomId, room.roomCode, 'duo', room.duoCorrectCount, room.duoLevel]
     );
     await Promise.all(
       room.players.map(player =>
         pool.query(
           'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
-          [history.id, player.userId, player.username, room.duoScore, 1]
+          [history.id, player.userId, player.username, cleared ? 1 : 0, 1]
         )
       )
     );
@@ -182,8 +194,12 @@ function endGame(room: RoomState): void {
   if (room.mode === 'duo') {
     room.status = 'finished';
     void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
-    void saveDuoHistory(room);
-    broadcast(room, 'game:duo_end', { score: room.duoScore, bestStreak: room.duoBestStreak });
+    void saveDuoHistory(room, false);
+    broadcast(room, 'game:duo_end', {
+      cleared: false,
+      correctCount: room.duoCorrectCount,
+      level: room.duoLevel,
+    });
     return;
   }
   room.status = 'finished';
@@ -191,6 +207,24 @@ function endGame(room: RoomState): void {
   void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
   void saveGameHistory(room, scores);
   broadcast(room, 'game:end', { players: scores });
+}
+
+/**
+ * デュオモード：10問正解によるステージクリア処理
+ * @param room - 対象ルーム
+ * @param correct - 正解者情報
+ */
+function endDuoClear(room: RoomState, correct: { userId: string; username: string }): void {
+  room.status = 'finished';
+  broadcast(room, 'game:turn_end', { topic: room.topic, correct, duoCorrectCount: room.duoCorrectCount });
+  void pool.query("UPDATE rooms SET status = 'finished' WHERE id = $1", [room.roomId]);
+  void saveDuoHistory(room, true);
+  setTimeout(() => {
+    broadcast(room, 'game:duo_clear', {
+      level: room.duoLevel,
+      timeLeft: room.gameTimeLeft,
+    });
+  }, 2000);
 }
 
 /**
@@ -305,17 +339,18 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
   clearRoomTimers(room);
 
   if (correct !== null) {
-    room.consecutiveCorrect += 1;
     if (room.mode === 'duo') {
-      // 正解 +1pt、5の倍数連続でボーナス +2pt
-      room.duoScore += 1;
-      if (room.consecutiveCorrect % 5 === 0) room.duoScore += 2;
-      if (room.consecutiveCorrect > room.duoBestStreak) room.duoBestStreak = room.consecutiveCorrect;
-    }
-    // 人狼モード：5連続正解で市民勝利
-    if (room.mode === 'werewolf' && room.consecutiveCorrect >= 5) {
-      endWerewolfCitizensStreak(room, correct);
-      return;
+      room.duoCorrectCount += 1;
+      if (room.duoCorrectCount >= 10) {
+        endDuoClear(room, correct);
+        return;
+      }
+    } else {
+      room.consecutiveCorrect += 1;
+      if (room.mode === 'werewolf' && room.consecutiveCorrect >= 5) {
+        endWerewolfCitizensStreak(room, correct);
+        return;
+      }
     }
   } else {
     room.consecutiveCorrect = 0;
@@ -329,9 +364,7 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
 
   const turnEndPayload: Record<string, unknown> = { topic: room.topic, correct };
   if (room.mode === 'duo') {
-    turnEndPayload.duoScore = room.duoScore;
-    turnEndPayload.duoStreak = room.consecutiveCorrect;
-    turnEndPayload.duoBestStreak = room.duoBestStreak;
+    turnEndPayload.duoCorrectCount = room.duoCorrectCount;
   }
   broadcast(room, 'game:turn_end', turnEndPayload);
 
@@ -360,7 +393,7 @@ function startTurn(room: RoomState): void {
 
   const drawer = room.players[room.drawerIndex];
   const duoExtra = room.mode === 'duo'
-    ? { duoScore: room.duoScore, duoStreak: room.consecutiveCorrect, duoBestStreak: room.duoBestStreak }
+    ? { duoCorrectCount: room.duoCorrectCount, duoLevel: room.duoLevel }
     : {};
   for (const p of room.players) {
     send(p.ws, 'game:turn_start', {
@@ -428,8 +461,8 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       judgmentTimer: null,
       topicDifficulty: 1,
       isTurnEnding: false,
-      duoScore: 0,
-      duoBestStreak: 0,
+      duoLevel: null,
+      duoCorrectCount: 0,
     };
     rooms.set(roomCode, room);
   }
@@ -469,15 +502,28 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
     if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
   }
 
-  // デュオモードは時間固定（300秒 / 30秒）
-  const gameDuration = mode === 'duo' ? 300
-    : VALID_GAME_DURATIONS.includes(payload.gameDuration as typeof VALID_GAME_DURATIONS[number])
+  let gameDuration: number;
+  let turnDuration: number;
+
+  if (mode === 'duo') {
+    const duoLevel = ([1, 2, 3, 4] as const).includes(payload.duoLevel as 1|2|3|4)
+      ? (payload.duoLevel as 1|2|3|4)
+      : 1;
+    const lvSettings = DUO_LEVEL_SETTINGS[duoLevel];
+    gameDuration = lvSettings.gameDuration;
+    turnDuration = lvSettings.turnDuration;
+    room.duoLevel = duoLevel;
+    room.duoCorrectCount = 0;
+  } else {
+    gameDuration = VALID_GAME_DURATIONS.includes(payload.gameDuration as typeof VALID_GAME_DURATIONS[number])
       ? (payload.gameDuration as number)
       : 300;
-  const turnDuration = mode === 'duo' ? 30
-    : VALID_TURN_DURATIONS.includes(payload.turnDuration as typeof VALID_TURN_DURATIONS[number])
+    turnDuration = VALID_TURN_DURATIONS.includes(payload.turnDuration as typeof VALID_TURN_DURATIONS[number])
       ? (payload.turnDuration as number)
       : 30;
+    room.duoLevel = null;
+    room.duoCorrectCount = 0;
+  }
 
   room.mode = mode;
   room.gameDuration = gameDuration;
@@ -491,8 +537,6 @@ function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>):
   room.votes = new Map();
   room.judgmentPhase = false;
   room.isTurnEnding = false;
-  room.duoScore = 0;
-  room.duoBestStreak = 0;
   for (const p of room.players) p.score = 0;
   void pool.query("UPDATE rooms SET status = 'playing' WHERE id = $1", [room.roomId]);
 

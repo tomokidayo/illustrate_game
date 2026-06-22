@@ -14,6 +14,13 @@ const DIFFICULTY_LABEL: Record<number, string> = {
   4: '超むずかしい',
 };
 
+const DUO_LEVEL_INFO: Record<number, { name: string; time: string; turnTime: string }> = {
+  1: { name: 'かんたん',     time: '3分', turnTime: '30秒' },
+  2: { name: 'ふつう',      time: '3分', turnTime: '30秒' },
+  3: { name: 'むずかしい',  time: '4分', turnTime: '30秒' },
+  4: { name: '超むずかしい', time: '5分', turnTime: '45秒' },
+};
+
 /**
  * ゲーム画面ページ
  * @description ルームに接続し、待機・プレイ・終了の各フェーズを表示する
@@ -26,6 +33,7 @@ export default function Game() {
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedGameDuration, setSelectedGameDuration] = useState(300);
   const [selectedTurnDuration, setSelectedTurnDuration] = useState(30);
+  const [selectedDuoLevel, setSelectedDuoLevel] = useState<1|2|3|4>(1);
 
   const {
     gameStatus,
@@ -53,9 +61,8 @@ export default function Game() {
     hasVoted,
     werewolfResult,
     sendVote,
-    duoStreak,
-    duoBestStreak,
-    duoScore,
+    duoCorrectCount,
+    duoLevel,
     duoResult,
   } = useGame(roomCode!, user!.id);
 
@@ -86,18 +93,39 @@ export default function Game() {
     );
   }
 
-  // ─── デュオモード終了画面 ────────────────────────────────────────────────────
-  if (gameStatus === 'finished' && gameMode === 'duo' && duoResult) {
+  // ─── デュオモード クリア画面 ─────────────────────────────────────────────────
+  if (gameStatus === 'finished' && gameMode === 'duo' && duoResult?.cleared) {
+    const tl = duoResult.timeLeft ?? 0;
+    const mins = Math.floor(tl / 60);
+    const secs = tl % 60;
     return (
       <div className="finished-page">
-        <div className="finished-card">
+        <div className="finished-card duo-clear-card">
           <div className="finished-icon">🎉</div>
-          <h1 className="finished-title">お疲れさまでした！</h1>
-          <div className="duo-result-score">{duoResult.score}<span className="duo-result-unit">pt</span></div>
-          <div className="duo-result-streak">
-            <span className="duo-result-streak-label">最高連続正解</span>
-            <span className="duo-result-streak-value">🔥 {duoResult.bestStreak} 連続</span>
+          <h1 className="finished-title duo-clear-title">ステージクリア！</h1>
+          <div className="duo-clear-level">
+            {'⭐'.repeat(duoResult.level)} Lv.{duoResult.level} {DUO_LEVEL_INFO[duoResult.level]?.name}
           </div>
+          <div className="duo-clear-time">残り時間 {mins}:{String(secs).padStart(2, '0')}</div>
+          <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
+            ロビーに戻る
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── デュオモード ゲームオーバー画面 ────────────────────────────────────────
+  if (gameStatus === 'finished' && gameMode === 'duo' && duoResult && !duoResult.cleared) {
+    return (
+      <div className="finished-page">
+        <div className="finished-card duo-gameover-card">
+          <div className="finished-icon">💔</div>
+          <h1 className="finished-title">ゲームオーバー</h1>
+          <div className="duo-clear-level">
+            {'⭐'.repeat(duoResult.level)} Lv.{duoResult.level} {DUO_LEVEL_INFO[duoResult.level]?.name}
+          </div>
+          <div className="duo-gameover-count">{duoResult.correctCount} / 10 問正解</div>
           <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
             ロビーに戻る
           </button>
@@ -219,7 +247,23 @@ export default function Game() {
           {isHost ? (
             <>
               {isDuo ? (
-                <div className="duo-mode-badge">🤝 デュオモード（2人協力）</div>
+                <>
+                  <p className="waiting-hint">レベルを選んでスタートしましょう！</p>
+                  <div className="duo-level-grid">
+                    {([1, 2, 3, 4] as const).map(lv => (
+                      <button
+                        key={lv}
+                        type="button"
+                        className={`duo-level-card ${selectedDuoLevel === lv ? 'duo-level-card--selected' : ''}`}
+                        onClick={() => setSelectedDuoLevel(lv)}
+                      >
+                        <div className="duo-level-stars">{'⭐'.repeat(lv)}</div>
+                        <div className="duo-level-name">Lv.{lv} {DUO_LEVEL_INFO[lv].name}</div>
+                        <div className="duo-level-info">{DUO_LEVEL_INFO[lv].time} / {DUO_LEVEL_INFO[lv].turnTime}ターン</div>
+                      </button>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <>
                   <div className="mode-selector">
@@ -282,7 +326,7 @@ export default function Game() {
                 className="btn btn-primary btn-full"
                 type="button"
                 onClick={() => isDuo
-                  ? startGame('duo', 300, 30)
+                  ? startGame('duo', 0, 0, selectedDuoLevel)
                   : startGame(selectedMode, selectedGameDuration, selectedTurnDuration)
                 }
                 disabled={!canStart}
@@ -311,7 +355,7 @@ export default function Game() {
           <div className="streak-counter">🔥 {consecutiveCorrect}/5 連続正解</div>
         )}
         {gameMode === 'duo' && (
-          <div className="streak-counter">🔥 {duoStreak}連続 / {duoScore}pt</div>
+          <div className="streak-counter">🎯 {duoCorrectCount}/10問</div>
         )}
         <button className="btn btn-ghost btn-sm" type="button" onClick={handleAbort}>
           中断
@@ -352,20 +396,22 @@ export default function Game() {
         </div>
         <div className="game-sidebar">
           {gameMode === 'duo' ? (
-            <div className="duo-score-panel">
-              <div className="duo-score-row">
-                <span className="duo-score-label">合計スコア</span>
-                <span className="duo-score-value">{duoScore}<span className="duo-score-unit">pt</span></span>
+            <div className="duo-progress-panel">
+              <div className="duo-progress-level">
+                {'⭐'.repeat(duoLevel ?? 1)}&nbsp;Lv.{duoLevel}&nbsp;{DUO_LEVEL_INFO[duoLevel ?? 1]?.name}
               </div>
-              <div className="duo-score-row">
-                <span className="duo-score-label">🔥 現在の連続</span>
-                <span className="duo-score-value">{duoStreak}連続</span>
+              <div className="duo-progress-count">
+                <span className="duo-progress-correct">{duoCorrectCount}</span>
+                <span className="duo-progress-sep">/</span>
+                <span className="duo-progress-target">10</span>
               </div>
-              <div className="duo-score-row">
-                <span className="duo-score-label">最高連続</span>
-                <span className="duo-score-value duo-score-value--best">{duoBestStreak}連続</span>
+              <div className="duo-progress-bar">
+                <div
+                  className="duo-progress-bar-fill"
+                  style={{ width: `${Math.min((duoCorrectCount / 10) * 100, 100)}%` }}
+                />
               </div>
-              <div className="duo-score-hint">5連続達成でボーナス ＋2pt</div>
+              <p className="duo-progress-hint">10問正解でクリア！</p>
             </div>
           ) : gameMode !== 'werewolf' ? (
             <>
