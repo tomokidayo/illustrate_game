@@ -7,6 +7,8 @@ import Chat from '../components/Chat';
 import Timer from '../components/Timer';
 import Scoreboard from '../components/Scoreboard';
 
+const DUO_CLEAR_COUNT = 7;
+
 const DIFFICULTY_LABEL: Record<number, string> = {
   1: 'かんたん',
   2: 'ふつう',
@@ -126,7 +128,7 @@ export default function Game() {
           <div className="duo-clear-level">
             {'⭐'.repeat(duoResult.level)} Lv.{duoResult.level} {DUO_LEVEL_INFO[duoResult.level]?.name}
           </div>
-          <div className="duo-gameover-count">{duoResult.correctCount} / 10 問正解</div>
+          <div className="duo-gameover-count">{duoResult.correctCount} / {DUO_CLEAR_COUNT} 問正解</div>
           <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
             ロビーに戻る
           </button>
@@ -364,7 +366,7 @@ export default function Game() {
           <div className="streak-counter">🔥 {consecutiveCorrect}/5 連続正解</div>
         )}
         {gameMode === 'duo' && (
-          <div className="streak-counter">🎯 {duoCorrectCount}/10問</div>
+          <div className="streak-counter">🎯 {duoCorrectCount}/{DUO_CLEAR_COUNT}問</div>
         )}
         <button className="btn btn-ghost btn-sm" type="button" onClick={handleAbort}>
           中断
@@ -417,10 +419,10 @@ export default function Game() {
               <div className="duo-progress-bar">
                 <div
                   className="duo-progress-bar-fill"
-                  style={{ width: `${Math.min((duoCorrectCount / 10) * 100, 100)}%` }}
+                  style={{ width: `${Math.min((duoCorrectCount / DUO_CLEAR_COUNT) * 100, 100)}%` }}
                 />
               </div>
-              <p className="duo-progress-hint">10問正解でクリア！</p>
+              <p className="duo-progress-hint">{DUO_CLEAR_COUNT}問正解でクリア！</p>
             </div>
           ) : gameMode !== 'werewolf' ? (
             <>

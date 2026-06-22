@@ -55,7 +55,7 @@ interface RoomState {
   consecutiveCorrect: number;
   /** デュオモード：選択されたステージレベル（1〜4） */
   duoLevel: 1 | 2 | 3 | 4 | null;
-  /** デュオモード：現在の正解数（10問でクリア） */
+  /** デュオモード：現在の正解数（7問でクリア） */
   duoCorrectCount: number;
   /** 投票データ（voterId → targetUserId） */
   votes: Map<string, string>;
@@ -210,7 +210,7 @@ function endGame(room: RoomState): void {
 }
 
 /**
- * デュオモード：10問正解によるステージクリア処理
+ * デュオモード：7問正解によるステージクリア処理
  * @param room - 対象ルーム
  * @param correct - 正解者情報
  */
