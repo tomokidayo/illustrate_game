@@ -26,6 +26,7 @@ export default function Lobby() {
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
   const [histories, setHistories] = useState<GameHistoryEntry[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     api.get<GameHistoryEntry[]>('/api/game-histories')
@@ -71,6 +72,8 @@ export default function Lobby() {
     <div className="lobby-layout">
       <header className="lobby-header">
         <div className="lobby-header-logo">🌲 お絵描きの森</div>
+
+        {/* デスクトップ用ナビ */}
         <div className="lobby-header-user">
           {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
           <span>{user?.username}</span>
@@ -78,6 +81,53 @@ export default function Lobby() {
           <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
           <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
         </div>
+
+        {/* モバイル用ハンバーガー */}
+        <button
+          className="lobby-hamburger"
+          type="button"
+          aria-label="メニューを開く"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen(prev => !prev)}
+        >
+          <span className="lobby-hamburger-icon" aria-hidden="true">
+            {menuOpen ? '✕' : '☰'}
+          </span>
+        </button>
+
+        {/* モバイル用ドロップダウン */}
+        {menuOpen && (
+          <>
+            <div className="lobby-menu-overlay" onClick={() => setMenuOpen(false)} />
+            <nav className="lobby-menu-dropdown">
+              <div className="lobby-menu-user">
+                {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
+                <span className="lobby-menu-username">{user?.username}</span>
+              </div>
+              <Link
+                className="lobby-menu-item"
+                to="/profile"
+                onClick={() => setMenuOpen(false)}
+              >
+                マイページ
+              </Link>
+              <Link
+                className="lobby-menu-item"
+                to="/rules"
+                onClick={() => setMenuOpen(false)}
+              >
+                ルール
+              </Link>
+              <button
+                className="lobby-menu-item lobby-menu-item--danger"
+                type="button"
+                onClick={() => { setMenuOpen(false); handleLogout(); }}
+              >
+                ログアウト
+              </button>
+            </nav>
+          </>
+        )}
       </header>
       <main className="lobby-main">
         {error && <p className="error-msg" role="alert">{error}</p>}
