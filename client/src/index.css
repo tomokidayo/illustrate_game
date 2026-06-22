@@ -835,7 +835,7 @@ a:hover { text-decoration: underline; }
 
 .waiting-back-btn {
   align-self: flex-start;
-  margin-left: calc(50% - 200px);
+  margin-left: max(16px, calc(50% - 200px));
 }
 
 .waiting-card {

@@ -230,8 +230,7 @@ export default function Game() {
 
   // ─── 待機フェーズ ────────────────────────────────────────────────────────────
   if (gameStatus === 'waiting') {
-    const isDuoRoom = (location.state as { isDuoRoom?: boolean } | null)?.isDuoRoom === true;
-    const isDuo = isDuoRoom || players.length === 2;
+    const isDuo = (location.state as { isDuoRoom?: boolean } | null)?.isDuoRoom === true;
     // デュオは2人固定で開始可能、通常/人狼は3人以上必要
     const canStart = isDuo ? players.length === 2 : players.length >= 3;
     return (
