@@ -121,6 +121,59 @@ export default function Rules() {
           </ol>
         </section>
 
+        {/* ── デュオモード ── */}
+        <div className="rules-mode-label rules-mode-label--duo">👫 デュオモード</div>
+
+        <section className="rules-card">
+          <h2 className="rules-section-title">概要</h2>
+          <ul className="rules-list">
+            <li><strong>2人専用</strong>のステージクリア型モードです。スコアはありません。</li>
+            <li>2人で交互に絵描き役を担当し、<strong>7問正解</strong>でステージクリアです。</li>
+            <li>制限時間内にクリアできなかった場合はゲームオーバーになります。</li>
+            <li>難易度は<strong>Lv.1〜4</strong>の4段階から選べます。レベルが上がるほどお題が難しくなります。</li>
+          </ul>
+        </section>
+
+        <section className="rules-card">
+          <h2 className="rules-section-title">レベル一覧</h2>
+          <table className="rules-table">
+            <thead>
+              <tr>
+                <th>レベル</th>
+                <th>難易度</th>
+                <th>制限時間</th>
+                <th>1ターン</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>⭐ Lv.1</td>
+                <td>かんたん</td>
+                <td>4分</td>
+                <td>30秒</td>
+              </tr>
+              <tr>
+                <td>⭐⭐ Lv.2</td>
+                <td>ふつう</td>
+                <td>4分</td>
+                <td>30秒</td>
+              </tr>
+              <tr>
+                <td>⭐⭐⭐ Lv.3</td>
+                <td>むずかしい</td>
+                <td>4分</td>
+                <td>30秒</td>
+              </tr>
+              <tr>
+                <td>⭐⭐⭐⭐ Lv.4</td>
+                <td>超むずかしい</td>
+                <td>5分</td>
+                <td>45秒</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
         {/* ── 共通その他 ── */}
         <section className="rules-card">
           <h2 className="rules-section-title">💡 その他のルール（共通）</h2>
