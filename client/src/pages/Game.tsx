@@ -246,6 +246,13 @@ export default function Game() {
               ? '2人接続中 — デュオモードで遊べます'
               : `${players.length} 人接続中（ゲーム開始には 3 人以上必要）`}
           </p>
+          <button
+            className="btn btn-ghost btn-sm"
+            type="button"
+            onClick={() => navigate('/lobby')}
+          >
+            ← ロビーに戻る
+          </button>
           {isHost ? (
             <>
               {isDuo ? (
