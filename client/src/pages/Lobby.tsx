@@ -18,6 +18,8 @@ interface GameHistoryEntry {
  * ロビー画面コンポーネント
  * @description ルームの作成・参加・ログアウトを行うページ
  */
+const ADMIN_USERNAME = 'tomoki';
+
 export default function Lobby() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -79,6 +81,9 @@ export default function Lobby() {
           <span>{user?.username}</span>
           <Link className="btn btn-ghost btn-sm" to="/profile">マイページ</Link>
           <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
+          {user?.username === ADMIN_USERNAME && (
+            <Link className="btn btn-ghost btn-sm" to="/admin/users">管理者</Link>
+          )}
           <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
         </div>
 
@@ -118,6 +123,15 @@ export default function Lobby() {
               >
                 ルール
               </Link>
+              {user?.username === ADMIN_USERNAME && (
+                <Link
+                  className="lobby-menu-item"
+                  to="/admin/users"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  管理者
+                </Link>
+              )}
               <button
                 className="lobby-menu-item lobby-menu-item--danger"
                 type="button"

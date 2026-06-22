@@ -7,6 +7,7 @@ import Lobby from './pages/Lobby';
 import Game from './pages/Game';
 import Rules from './pages/Rules';
 import Profile from './pages/Profile';
+import AdminUsers from './pages/AdminUsers';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/room/:roomCode" element={<ProtectedRoute><Game /></ProtectedRoute>} />
           <Route path="/rules" element={<ProtectedRoute><Rules /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
