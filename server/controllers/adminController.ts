@@ -13,8 +13,12 @@ interface UserRow {
  * @route GET /api/admin/users
  */
 export const getUsers = async (_req: Request, res: Response): Promise<void> => {
-  const { rows } = await pool.query<UserRow>(
-    'SELECT id, username, avatar, created_at FROM users ORDER BY created_at DESC'
-  );
-  res.json(rows);
+  try {
+    const { rows } = await pool.query<UserRow>(
+      'SELECT id, username, avatar, created_at FROM users ORDER BY created_at DESC'
+    );
+    res.json(rows);
+  } catch {
+    res.status(500).json({ error: 'サーバーエラーが発生しました' });
+  }
 };
