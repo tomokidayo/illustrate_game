@@ -133,15 +133,15 @@ export default function Lobby() {
         {error && <p className="error-msg" role="alert">{error}</p>}
         <div className="lobby-grid">
           <div className="lobby-card">
-            <div className="lobby-card-title">🎨 ルームを作成</div>
-            <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。</p>
+            <div className="lobby-card-title">🎨 対戦ルームを作成</div>
+            <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。3人以上で遊べるよ。</p>
             <button className="btn btn-primary" type="button" onClick={() => handleCreate()} disabled={creating}>
               {creating ? '作成中...' : 'ルームを作成'}
             </button>
           </div>
           <div className="lobby-card lobby-card--duo">
             <div className="lobby-card-title">👫 二人で遊ぶ</div>
-            <p className="lobby-card-desc">2人で協力してステージをクリア！難易度別に4レベル挑戦できます。</p>
+            <p className="lobby-card-desc">2人で協力してステージをクリア！</p>
             <button className="btn btn-duo" type="button" onClick={() => handleCreate(true)} disabled={creating}>
               {creating ? '作成中...' : 'デュオルームを作成'}
             </button>
