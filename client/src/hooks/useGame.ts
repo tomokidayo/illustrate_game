@@ -58,8 +58,14 @@ export interface TurnEndInfo {
 
 /** デュオモード終了時の結果データ */
 export interface DuoResult {
-  score: number;
-  bestStreak: number;
+  /** クリア成功かどうか */
+  cleared: boolean;
+  /** ステージレベル（1〜4） */
+  level: number;
+  /** 正解数（クリア時は10） */
+  correctCount: number;
+  /** クリア時の残り時間（秒） */
+  timeLeft?: number;
 }
 
 /** 人狼モード終了時の結果データ */
@@ -86,7 +92,7 @@ export interface UseGameReturn {
   clearSignal: number;
   isHost: boolean;
   send: (type: string, payload?: Record<string, unknown>) => void;
-  startGame: (mode?: GameMode, gameDuration?: number, turnDuration?: number) => void;
+  startGame: (mode?: GameMode, gameDuration?: number, turnDuration?: number, duoLevel?: number) => void;
   submitAnswer: (answer: string) => void;
   sendDraw: (data: Omit<DrawData, 'roomCode'>) => void;
   sendClear: () => void;
@@ -116,12 +122,10 @@ export interface UseGameReturn {
   werewolfResult: WerewolfResult | null;
   /** 投票を送信する */
   sendVote: (targetUserId: string) => void;
-  /** デュオモード：現在の連続正解数 */
-  duoStreak: number;
-  /** デュオモード：ゲーム中の最高連続正解数 */
-  duoBestStreak: number;
-  /** デュオモード：現在の合計スコア */
-  duoScore: number;
+  /** デュオモード：現在の正解数 */
+  duoCorrectCount: number;
+  /** デュオモード：選択レベル */
+  duoLevel: number | null;
   /** デュオモードの終了結果 */
   duoResult: DuoResult | null;
 }
@@ -159,9 +163,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   const [werewolfResult, setWerewolfResult] = useState<WerewolfResult | null>(null);
 
   // デュオモード関連の状態
-  const [duoStreak, setDuoStreak] = useState(0);
-  const [duoBestStreak, setDuoBestStreak] = useState(0);
-  const [duoScore, setDuoScore] = useState(0);
+  const [duoCorrectCount, setDuoCorrectCount] = useState(0);
+  const [duoLevel, setDuoLevel] = useState<number | null>(null);
   const [duoResult, setDuoResult] = useState<DuoResult | null>(null);
 
   const drawQueueRef = useRef<DrawData[]>([]);
@@ -205,9 +208,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         setGameStatus('playing');
         setTurnEndInfo(null);
         if (payload.mode) setGameMode(payload.mode as GameMode);
-        if (payload.duoScore !== undefined) setDuoScore(payload.duoScore as number);
-        if (payload.duoStreak !== undefined) setDuoStreak(payload.duoStreak as number);
-        if (payload.duoBestStreak !== undefined) setDuoBestStreak(payload.duoBestStreak as number);
+        if (payload.duoLevel !== undefined) setDuoLevel(payload.duoLevel as number);
+        if (payload.duoCorrectCount !== undefined) setDuoCorrectCount(payload.duoCorrectCount as number);
         break;
       }
 
@@ -222,10 +224,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         const topic = payload.topic as string;
         const correct = payload.correct as { userId: string; username: string } | null;
         setTurnEndInfo({ topic, correct });
-        if (payload.duoScore !== undefined) {
-          setDuoScore(payload.duoScore as number);
-          setDuoStreak(payload.duoStreak as number);
-          setDuoBestStreak(payload.duoBestStreak as number);
+        if (payload.duoCorrectCount !== undefined) {
+          setDuoCorrectCount(payload.duoCorrectCount as number);
         } else if (correct) {
           setConsecutiveCorrect(prev => prev + 1);
         } else {
@@ -329,8 +329,21 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
 
       case 'game:duo_end': {
         setDuoResult({
-          score: payload.score as number,
-          bestStreak: payload.bestStreak as number,
+          cleared: false,
+          level: payload.level as number,
+          correctCount: payload.correctCount as number,
+        });
+        setGameStatus('finished');
+        setTurnEndInfo(null);
+        break;
+      }
+
+      case 'game:duo_clear': {
+        setDuoResult({
+          cleared: true,
+          level: payload.level as number,
+          correctCount: 10,
+          timeLeft: payload.timeLeft as number,
         });
         setGameStatus('finished');
         setTurnEndInfo(null);
@@ -367,8 +380,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
    * @param gameDuration - 1ゲームの秒数（180 / 240 / 300、デフォルト: 300）
    * @param turnDuration - 1ターンの秒数（30 / 45 / 60、デフォルト: 30）
    */
-  const startGame = useCallback((mode: GameMode = 'normal', gameDuration = 300, turnDuration = 30) => {
-    send('game:start', { roomCode, mode, gameDuration, turnDuration });
+  const startGame = useCallback((mode: GameMode = 'normal', gameDuration = 300, turnDuration = 30, duoLevel?: number) => {
+    send('game:start', { roomCode, mode, gameDuration, turnDuration, ...(duoLevel !== undefined ? { duoLevel } : {}) });
   }, [send, roomCode]);
 
   const submitAnswer = useCallback((answer: string) => {
@@ -426,9 +439,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     hasVoted,
     werewolfResult,
     sendVote,
-    duoStreak,
-    duoBestStreak,
-    duoScore,
+    duoCorrectCount,
+    duoLevel,
     duoResult,
   };
 }

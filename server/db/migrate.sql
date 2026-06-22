@@ -68,3 +68,4 @@ CREATE INDEX IF NOT EXISTS idx_friendships_receiver ON friendships(receiver_id);
 
 ALTER TABLE game_histories ADD COLUMN IF NOT EXISTS mode VARCHAR(20) DEFAULT 'normal';
 ALTER TABLE game_histories ADD COLUMN IF NOT EXISTS best_streak INTEGER DEFAULT 0;
+ALTER TABLE game_histories ADD COLUMN IF NOT EXISTS duo_level INTEGER;

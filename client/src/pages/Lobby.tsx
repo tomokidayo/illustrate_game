@@ -139,6 +139,13 @@ export default function Lobby() {
               {creating ? '作成中...' : 'ルームを作成'}
             </button>
           </div>
+          <div className="lobby-card lobby-card--duo">
+            <div className="lobby-card-title">👫 二人で遊ぶ</div>
+            <p className="lobby-card-desc">2人で協力してステージをクリア！難易度別に4レベル挑戦できます。</p>
+            <button className="btn btn-duo" type="button" onClick={handleCreate} disabled={creating}>
+              {creating ? '作成中...' : 'デュオルームを作成'}
+            </button>
+          </div>
           <div className="lobby-card">
             <div className="lobby-card-title">🚪 ルームに参加</div>
             <form className="lobby-join-form" onSubmit={handleJoin}>
