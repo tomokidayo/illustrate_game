@@ -393,7 +393,7 @@ function startTurn(room: RoomState): void {
 
   const drawer = room.players[room.drawerIndex];
   const duoExtra = room.mode === 'duo'
-    ? { duoCorrectCount: room.duoCorrectCount }
+    ? { duoCorrectCount: room.duoCorrectCount, duoLevel: room.duoLevel }
     : {};
   for (const p of room.players) {
     send(p.ws, 'game:turn_start', {

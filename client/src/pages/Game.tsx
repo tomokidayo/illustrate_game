@@ -259,7 +259,7 @@ export default function Game() {
                       >
                         <div className="duo-level-stars">{'⭐'.repeat(lv)}</div>
                         <div className="duo-level-name">Lv.{lv} {DUO_LEVEL_INFO[lv].name}</div>
-                        <div className="duo-level-info">{DUO_LEVEL_INFO[lv].time} / 30秒ターン</div>
+                        <div className="duo-level-info">{DUO_LEVEL_INFO[lv].time} / {DUO_LEVEL_INFO[lv].turnTime}ターン</div>
                       </button>
                     ))}
                   </div>
