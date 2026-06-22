@@ -7,11 +7,11 @@ import Chat from '../components/Chat';
 import Timer from '../components/Timer';
 import Scoreboard from '../components/Scoreboard';
 
-const SCORE_TABLE: Record<number, { answerer: number; drawer: number; timeout: number }> = {
-  1: { answerer: 1, drawer: 1, timeout:  0 },
-  2: { answerer: 2, drawer: 1, timeout: -1 },
-  3: { answerer: 3, drawer: 2, timeout: -2 },
-  4: { answerer: 5, drawer: 3, timeout: -3 },
+const SCORE_TABLE: Record<number, { answerer: number; drawer: number }> = {
+  1: { answerer: 1, drawer: 1 },
+  2: { answerer: 2, drawer: 1 },
+  3: { answerer: 3, drawer: 2 },
+  4: { answerer: 5, drawer: 3 },
 };
 
 const DIFFICULTY_LABEL: Record<number, string> = {
@@ -314,11 +314,6 @@ export default function Game() {
         <span className="game-header-drawer">
           絵描き：<strong>{turn?.drawerName ?? '—'}</strong>
         </span>
-        {turn && gameMode === 'normal' && (
-          <span className={`difficulty-badge difficulty-badge--${turn.difficulty}`}>
-            {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
-          </span>
-        )}
         {gameMode === 'werewolf' && (
           <div className="streak-counter">🔥 {consecutiveCorrect}/5 連続正解</div>
         )}
@@ -395,9 +390,7 @@ export default function Game() {
                     </div>
                     <div className="score-ref-row">
                       <span>正解なし</span>
-                      <span className={`score-ref-pts ${pts.timeout < 0 ? 'score-ref-pts--minus' : 'score-ref-pts--zero'}`}>
-                        {pts.timeout < 0 ? `描き手 ${pts.timeout}` : 'ペナルティなし'}
-                      </span>
+                      <span className="score-ref-pts score-ref-pts--minus">描き手 −2</span>
                     </div>
                   </div>
                 );

@@ -8,10 +8,10 @@ type WsMessage = { type: string; payload?: Record<string, unknown> };
 
 /** 難易度別ポイントテーブル（通常モードのみ適用） */
 const SCORE_TABLE: Record<number, { answerer: number; drawer: number; timeout: number }> = {
-  1: { answerer: 1, drawer: 1, timeout:  0 },
-  2: { answerer: 2, drawer: 1, timeout: -1 },
+  1: { answerer: 1, drawer: 1, timeout: -2 },
+  2: { answerer: 2, drawer: 1, timeout: -2 },
   3: { answerer: 3, drawer: 2, timeout: -2 },
-  4: { answerer: 5, drawer: 3, timeout: -3 },
+  4: { answerer: 5, drawer: 3, timeout: -2 },
 };
 
 /** ルーム内の1プレイヤー */

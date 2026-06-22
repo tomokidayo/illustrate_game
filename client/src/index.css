@@ -986,7 +986,7 @@ a:hover { text-decoration: underline; }
 
 .score-ref-pts--plus  { color: var(--green); }
 .score-ref-pts--minus { color: var(--red); }
-.score-ref-pts--zero  { color: var(--text-sub); }
+.score-ref-pts--zero  { color: var(--text-muted); }
 
 /* ── Difficulty badge ──────────────────────────────────────────── */
 .difficulty-badge {
