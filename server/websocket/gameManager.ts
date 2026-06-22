@@ -6,13 +6,6 @@ import topics, { Topic } from '../data/topics';
 /** WebSocketメッセージの共通形式 */
 type WsMessage = { type: string; payload?: Record<string, unknown> };
 
-/** 難易度別ポイントテーブル（通常モードのみ適用） */
-const SCORE_TABLE: Record<number, { answerer: number; drawer: number; timeout: number }> = {
-  1: { answerer: 1, drawer: 1, timeout: -2 },
-  2: { answerer: 2, drawer: 1, timeout: -2 },
-  3: { answerer: 3, drawer: 2, timeout: -2 },
-  4: { answerer: 5, drawer: 3, timeout: -2 },
-};
 
 /** ルーム内の1プレイヤー */
 interface Player {
@@ -326,14 +319,11 @@ function endTurn(room: RoomState, correct: { userId: string; username: string } 
     }
   } else {
     room.consecutiveCorrect = 0;
-    // 正解者なしの場合は描き手にペナルティ（通常モードのみ、難易度に応じた点数）
+    // 正解者なしの場合は描き手 -2pt（通常モードのみ）
     if (room.mode !== 'werewolf' && room.mode !== 'duo') {
-      const pts = SCORE_TABLE[room.topicDifficulty] ?? SCORE_TABLE[1];
-      if (pts.timeout < 0) {
-        const drawer = room.players[room.drawerIndex];
-        if (drawer) drawer.score += pts.timeout;
-        broadcastPlayersUpdated(room);
-      }
+      const drawer = room.players[room.drawerIndex];
+      if (drawer) drawer.score -= 2;
+      broadcastPlayersUpdated(room);
     }
   }
 
@@ -570,13 +560,12 @@ function handleAnswerSubmit(ws: AuthedWebSocket, payload: Record<string, unknown
   const normalizedAnswer = normalizeToHiragana(answer);
   if (normalizedAnswer === room.topicHiragana || answer.trim() === room.topic) {
     if (room.mode === 'normal') {
-      // 通常モード：難易度に応じた個人スコア付与
-      const pts = SCORE_TABLE[room.topicDifficulty] ?? SCORE_TABLE[1];
+      // 通常モード：個人スコア付与（回答者 +3 / 描き手 +2）
       const player = room.players.find(p => p.userId === ws.user!.id);
-      if (player) player.score += pts.answerer;
+      if (player) player.score += 3;
       const drawer = room.players[room.drawerIndex];
-      if (drawer) drawer.score += pts.drawer;
-      broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? pts.answerer });
+      if (drawer) drawer.score += 2;
+      broadcast(room, 'answer:correct', { userId: ws.user.id, username: ws.user.username, score: player?.score ?? 3 });
       broadcastPlayersUpdated(room);
     } else {
       // 人狼・デュオモード：個人スコアなし（デュオはendTurn内で加算）
