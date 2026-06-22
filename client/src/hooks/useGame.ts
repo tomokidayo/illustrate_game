@@ -342,7 +342,7 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         setDuoResult({
           cleared: true,
           level: payload.level as number,
-          correctCount: 10,
+          correctCount: 7,
           timeLeft: payload.timeLeft as number,
         });
         setGameStatus('finished');

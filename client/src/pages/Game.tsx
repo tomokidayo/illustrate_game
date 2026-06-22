@@ -15,8 +15,8 @@ const DIFFICULTY_LABEL: Record<number, string> = {
 };
 
 const DUO_LEVEL_INFO: Record<number, { name: string; time: string; turnTime: string }> = {
-  1: { name: 'かんたん',     time: '3分', turnTime: '30秒' },
-  2: { name: 'ふつう',      time: '3分', turnTime: '30秒' },
+  1: { name: 'かんたん',     time: '4分', turnTime: '30秒' },
+  2: { name: 'ふつう',      time: '4分', turnTime: '30秒' },
   3: { name: 'むずかしい',  time: '4分', turnTime: '30秒' },
   4: { name: '超むずかしい', time: '5分', turnTime: '45秒' },
 };
