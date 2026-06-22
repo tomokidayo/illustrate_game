@@ -829,8 +829,13 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  gap: 24px;
+  gap: 16px;
   background: var(--bg-subtle);
+}
+
+.waiting-back-btn {
+  align-self: flex-start;
+  margin-left: calc(50% - 200px);
 }
 
 .waiting-card {

@@ -236,6 +236,13 @@ export default function Game() {
     const canStart = isDuo ? players.length === 2 : players.length >= 3;
     return (
       <div className="waiting-page">
+        <button
+          className="btn btn-ghost btn-sm waiting-back-btn"
+          type="button"
+          onClick={() => navigate('/lobby')}
+        >
+          ← ロビーに戻る
+        </button>
         <div className="waiting-card">
           <div style={{ textAlign: 'center', fontSize: 32 }}>🌲</div>
           <h1 className="waiting-title">ルーム</h1>
@@ -246,13 +253,6 @@ export default function Game() {
               ? '2人接続中 — デュオモードで遊べます'
               : `${players.length} 人接続中（ゲーム開始には 3 人以上必要）`}
           </p>
-          <button
-            className="btn btn-ghost btn-sm"
-            type="button"
-            onClick={() => navigate('/lobby')}
-          >
-            ← ロビーに戻る
-          </button>
           {isHost ? (
             <>
               {isDuo ? (
