@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useGame, GameMode } from '../hooks/useGame';
 import Canvas from '../components/Canvas';
@@ -29,6 +29,7 @@ export default function Game() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [selectedMode, setSelectedMode] = useState<GameMode>('normal');
   const [selectedGameDuration, setSelectedGameDuration] = useState(300);
@@ -229,9 +230,10 @@ export default function Game() {
 
   // ─── 待機フェーズ ────────────────────────────────────────────────────────────
   if (gameStatus === 'waiting') {
-    const isDuo = players.length === 2;
+    const isDuoRoom = (location.state as { isDuoRoom?: boolean } | null)?.isDuoRoom === true;
+    const isDuo = isDuoRoom || players.length === 2;
     // デュオは2人固定で開始可能、通常/人狼は3人以上必要
-    const canStart = isDuo || players.length >= 3;
+    const canStart = isDuo ? players.length === 2 : players.length >= 3;
     return (
       <div className="waiting-page">
         <div className="waiting-card">

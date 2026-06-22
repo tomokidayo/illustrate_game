@@ -34,12 +34,12 @@ export default function Lobby() {
       .catch(err => console.error('Failed to fetch game histories:', err));
   }, []);
 
-  const handleCreate = async () => {
+  const handleCreate = async (isDuo = false) => {
     setError('');
     setCreating(true);
     try {
       const { data } = await api.post<{ room_code: string }>('/api/rooms');
-      navigate(`/room/${data.room_code}`);
+      navigate(`/room/${data.room_code}`, isDuo ? { state: { isDuoRoom: true } } : undefined);
     } catch (err) {
       setError(isAxiosError(err) ? err.response?.data?.error ?? 'ルーム作成に失敗しました' : 'ルーム作成に失敗しました');
     } finally {
@@ -135,14 +135,14 @@ export default function Lobby() {
           <div className="lobby-card">
             <div className="lobby-card-title">🎨 ルームを作成</div>
             <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。</p>
-            <button className="btn btn-primary" type="button" onClick={handleCreate} disabled={creating}>
+            <button className="btn btn-primary" type="button" onClick={() => handleCreate()} disabled={creating}>
               {creating ? '作成中...' : 'ルームを作成'}
             </button>
           </div>
           <div className="lobby-card lobby-card--duo">
             <div className="lobby-card-title">👫 二人で遊ぶ</div>
             <p className="lobby-card-desc">2人で協力してステージをクリア！難易度別に4レベル挑戦できます。</p>
-            <button className="btn btn-duo" type="button" onClick={handleCreate} disabled={creating}>
+            <button className="btn btn-duo" type="button" onClick={() => handleCreate(true)} disabled={creating}>
               {creating ? '作成中...' : 'デュオルームを作成'}
             </button>
           </div>
