@@ -28,6 +28,8 @@ export function useWebSocket(onMessage: WsMessageHandler, onOpen?: () => void) {
   });
 
   useEffect(() => {
+    isMountedRef.current = true;
+
     function connect() {
       if (!isMountedRef.current) return;
 
