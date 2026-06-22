@@ -24,6 +24,8 @@ export interface TurnInfo {
   topic?: string;
   turnTimeLeft: number;
   gameTimeLeft: number;
+  /** お題の難易度（1=かんたん〜4=超むずかしい） */
+  difficulty: number;
 }
 
 /** チャットメッセージの種別 */
@@ -198,7 +200,8 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         const topic = payload.topic as string | undefined;
         const turnTimeLeft = payload.turnTimeLeft as number;
         const gameTimeLeft = payload.gameTimeLeft as number;
-        setTurn({ drawerId, drawerName, topic, turnTimeLeft, gameTimeLeft });
+        const difficulty = (payload.difficulty as number) ?? 1;
+        setTurn({ drawerId, drawerName, topic, turnTimeLeft, gameTimeLeft, difficulty });
         setGameStatus('playing');
         setTurnEndInfo(null);
         if (payload.mode) setGameMode(payload.mode as GameMode);

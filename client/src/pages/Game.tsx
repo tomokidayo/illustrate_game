@@ -7,6 +7,20 @@ import Chat from '../components/Chat';
 import Timer from '../components/Timer';
 import Scoreboard from '../components/Scoreboard';
 
+const SCORE_TABLE: Record<number, { answerer: number; drawer: number; timeout: number }> = {
+  1: { answerer: 1, drawer: 1, timeout:  0 },
+  2: { answerer: 2, drawer: 1, timeout: -1 },
+  3: { answerer: 3, drawer: 2, timeout: -2 },
+  4: { answerer: 5, drawer: 3, timeout: -3 },
+};
+
+const DIFFICULTY_LABEL: Record<number, string> = {
+  1: 'かんたん',
+  2: 'ふつう',
+  3: 'むずかしい',
+  4: '超むずかしい',
+};
+
 /**
  * ゲーム画面ページ
  * @description ルームに接続し、待機・プレイ・終了の各フェーズを表示する
@@ -300,6 +314,11 @@ export default function Game() {
         <span className="game-header-drawer">
           絵描き：<strong>{turn?.drawerName ?? '—'}</strong>
         </span>
+        {turn && gameMode === 'normal' && (
+          <span className={`difficulty-badge difficulty-badge--${turn.difficulty}`}>
+            {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
+          </span>
+        )}
         {gameMode === 'werewolf' && (
           <div className="streak-counter">🔥 {consecutiveCorrect}/5 連続正解</div>
         )}
@@ -327,6 +346,9 @@ export default function Game() {
       {isDrawer && turn?.topic && (
         <div className="game-drawer-banner">
           ✏️ あなたが絵描き役です！　お題：{turn.topic}
+          <span className={`difficulty-badge difficulty-badge--${turn.difficulty} difficulty-badge--inline`}>
+            {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
+          </span>
         </div>
       )}
 
@@ -360,17 +382,26 @@ export default function Game() {
           ) : gameMode !== 'werewolf' ? (
             <>
               <Scoreboard players={players} drawerId={turn?.drawerId} />
-              <div className="score-ref">
-                <div className="score-ref-title">得点表</div>
-                <div className="score-ref-row">
-                  <span>正解</span>
-                  <span className="score-ref-pts score-ref-pts--plus">回答者 ＋3 / 描き手 ＋2</span>
-                </div>
-                <div className="score-ref-row">
-                  <span>正解なし</span>
-                  <span className="score-ref-pts score-ref-pts--minus">描き手 −2</span>
-                </div>
-              </div>
+              {(() => {
+                const pts = SCORE_TABLE[turn?.difficulty ?? 1];
+                return (
+                  <div className="score-ref">
+                    <div className="score-ref-title">得点表（現在のお題）</div>
+                    <div className="score-ref-row">
+                      <span>正解</span>
+                      <span className="score-ref-pts score-ref-pts--plus">
+                        回答者 ＋{pts.answerer} / 描き手 ＋{pts.drawer}
+                      </span>
+                    </div>
+                    <div className="score-ref-row">
+                      <span>正解なし</span>
+                      <span className={`score-ref-pts ${pts.timeout < 0 ? 'score-ref-pts--minus' : 'score-ref-pts--zero'}`}>
+                        {pts.timeout < 0 ? `描き手 ${pts.timeout}` : 'ペナルティなし'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()}
             </>
           ) : null}
           <Chat messages={messages} isDrawer={isDrawer} onSubmit={submitAnswer} />
