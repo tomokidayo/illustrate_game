@@ -414,7 +414,7 @@ export default function Game() {
               <div className="duo-progress-count">
                 <span className="duo-progress-correct">{duoCorrectCount}</span>
                 <span className="duo-progress-sep">/</span>
-                <span className="duo-progress-target">10</span>
+                <span className="duo-progress-target">{DUO_CLEAR_COUNT}</span>
               </div>
               <div className="duo-progress-bar">
                 <div
