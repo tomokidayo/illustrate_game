@@ -240,7 +240,7 @@ export default function Game() {
           <div style={{ textAlign: 'center', fontSize: 32 }}>🌲</div>
           <h1 className="waiting-title">ルーム</h1>
           <p className="waiting-code">{roomCode}</p>
-          <Scoreboard players={players} />
+          <Scoreboard players={players} showScore={false} />
           <p className="waiting-hint">
             {isDuo
               ? '2人接続中 — デュオモードで遊べます'
