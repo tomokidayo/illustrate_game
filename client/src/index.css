@@ -1612,3 +1612,59 @@ a:hover { text-decoration: underline; }
   gap: 6px;
   flex-shrink: 0;
 }
+
+/* ── Admin pages ───────────────────────────────────────────────── */
+.admin-users-table-wrap {
+  overflow-x: auto;
+}
+
+.admin-users-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  font-size: 14px;
+}
+
+.admin-users-table th,
+.admin-users-table td {
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-users-table th {
+  background: var(--accent-light);
+  color: var(--text-h);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.admin-users-table tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-users-table tr:hover td {
+  background: var(--accent-light);
+}
+
+.admin-users-avatar {
+  font-size: 20px;
+  text-align: center;
+  width: 40px;
+}
+
+.admin-users-id {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+}
+
+.admin-users-count {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: right;
+}

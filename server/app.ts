@@ -9,6 +9,7 @@ import roomRoutes from './routes/room';
 import gameHistoryRoutes from './routes/gameHistory';
 import profileRoutes from './routes/profile';
 import friendsRoutes from './routes/friends';
+import adminRoutes from './routes/admin';
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/game-histories', gameHistoryRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/friends', friendsRoutes);
+app.use('/api/admin', adminRoutes);
 
 if (process.env.NODE_ENV === 'production') {
   const clientDist = path.join(__dirname, '../../client/dist');
