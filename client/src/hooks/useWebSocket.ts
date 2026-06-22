@@ -67,6 +67,7 @@ export function useWebSocket(onMessage: WsMessageHandler, onOpen?: () => void) {
       if (document.visibilityState !== 'visible') return;
       const ws = wsRef.current;
       if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
         connect();
       }
     };
