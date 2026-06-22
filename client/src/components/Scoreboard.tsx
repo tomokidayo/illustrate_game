@@ -6,13 +6,15 @@ export interface ScoreboardProps {
   players: Player[];
   /** 現在の絵描き役のユーザーID（ハイライトに使用） */
   drawerId?: string;
+  /** スコアを表示するか（デフォルト: true） */
+  showScore?: boolean;
 }
 
 /**
  * スコアボードコンポーネント
  * @description プレイヤーをスコア降順で表示し、絵描き役をハイライトする
  */
-export default function Scoreboard({ players, drawerId }: ScoreboardProps) {
+export default function Scoreboard({ players, drawerId, showScore = true }: ScoreboardProps) {
   const sorted = [...players].sort((a, b) => b.score - a.score);
 
   return (
@@ -28,7 +30,7 @@ export default function Scoreboard({ players, drawerId }: ScoreboardProps) {
                 {p.avatar && <span className="scoreboard-avatar">{p.avatar}</span>}
                 {p.username}
               </span>
-              <span className="scoreboard-score">{p.score}pt</span>
+              {showScore && <span className="scoreboard-score">{p.score}pt</span>}
             </li>
           );
         })}
