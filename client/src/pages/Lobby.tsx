@@ -14,12 +14,24 @@ interface GameHistoryEntry {
   player_count: number;
 }
 
+const ADMIN_USERNAME = 'tomoki';
+
+function timeAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 2) return 'たった今';
+  if (minutes < 60) return `${minutes}分前`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}時間前`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return '昨日';
+  return `${days}日前`;
+}
+
 /**
  * ロビー画面コンポーネント
  * @description ルームの作成・参加・ログアウトを行うページ
  */
-const ADMIN_USERNAME = 'tomoki';
-
 export default function Lobby() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -77,28 +89,33 @@ export default function Lobby() {
 
         {/* デスクトップ用ナビ */}
         <div className="lobby-header-user">
-          {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
-          <span>{user?.username}</span>
-          <Link className="btn btn-ghost btn-sm" to="/profile">マイページ</Link>
           <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
           {user?.username === ADMIN_USERNAME && (
             <Link className="btn btn-ghost btn-sm" to="/admin/users">管理者</Link>
           )}
           <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
+          <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
+            {user?.avatar ?? user?.username?.[0]?.toUpperCase() ?? '?'}
+          </Link>
         </div>
 
-        {/* モバイル用ハンバーガー */}
-        <button
-          className="lobby-hamburger"
-          type="button"
-          aria-label="メニューを開く"
-          aria-expanded={menuOpen}
-          onClick={() => setMenuOpen(prev => !prev)}
-        >
-          <span className="lobby-hamburger-icon" aria-hidden="true">
-            {menuOpen ? '✕' : '☰'}
-          </span>
-        </button>
+        {/* モバイル用：アバター + ハンバーガー */}
+        <div className="lobby-header-mobile">
+          <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
+            {user?.avatar ?? user?.username?.[0]?.toUpperCase() ?? '?'}
+          </Link>
+          <button
+            className="lobby-hamburger"
+            type="button"
+            aria-label="メニューを開く"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen(prev => !prev)}
+          >
+            <span className="lobby-hamburger-icon" aria-hidden="true">
+              {menuOpen ? '✕' : '☰'}
+            </span>
+          </button>
+        </div>
 
         {/* モバイル用ドロップダウン */}
         {menuOpen && (
@@ -109,26 +126,14 @@ export default function Lobby() {
                 {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
                 <span className="lobby-menu-username">{user?.username}</span>
               </div>
-              <Link
-                className="lobby-menu-item"
-                to="/profile"
-                onClick={() => setMenuOpen(false)}
-              >
+              <Link className="lobby-menu-item" to="/profile" onClick={() => setMenuOpen(false)}>
                 マイページ
               </Link>
-              <Link
-                className="lobby-menu-item"
-                to="/rules"
-                onClick={() => setMenuOpen(false)}
-              >
+              <Link className="lobby-menu-item" to="/rules" onClick={() => setMenuOpen(false)}>
                 ルール
               </Link>
               {user?.username === ADMIN_USERNAME && (
-                <Link
-                  className="lobby-menu-item"
-                  to="/admin/users"
-                  onClick={() => setMenuOpen(false)}
-                >
+                <Link className="lobby-menu-item" to="/admin/users" onClick={() => setMenuOpen(false)}>
                   管理者
                 </Link>
               )}
@@ -143,56 +148,81 @@ export default function Lobby() {
           </>
         )}
       </header>
+
       <main className="lobby-main">
         {error && <p className="error-msg" role="alert">{error}</p>}
+
         <div className="lobby-grid">
+          {/* 対戦ルーム作成カード */}
           <div className="lobby-card">
-            <div className="lobby-card-title">🎨 対戦ルームを作成</div>
+            <div className="lobby-hero-deco" aria-hidden="true">🎨</div>
+            <div className="lobby-card-title">対戦ルームを作成</div>
             <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。3人以上で遊べるよ。</p>
-            <button className="btn btn-primary" type="button" onClick={() => handleCreate()} disabled={creating}>
-              {creating ? '作成中...' : 'ルームを作成'}
+            <button className="lobby-hero-btn" type="button" onClick={() => handleCreate()} disabled={creating}>
+              <span>⊕</span>
+              {creating ? '作成中...' : '部屋を作る'}
             </button>
           </div>
+
+          {/* デュオカード */}
           <div className="lobby-card lobby-card--duo">
-            <div className="lobby-card-title">👫 二人で遊ぶ</div>
-            <p className="lobby-card-desc">2人で協力してステージをクリア！</p>
-            <button className="btn btn-duo" type="button" onClick={() => handleCreate(true)} disabled={creating}>
+            <div className="lobby-hero-deco" aria-hidden="true">👫</div>
+            <div className="lobby-card-title">二人で遊ぶ</div>
+            <p className="lobby-card-desc">2人で協力してステージをクリア！難易度別に4レベル挑戦できます。</p>
+            <button className="lobby-hero-btn" type="button" onClick={() => handleCreate(true)} disabled={creating}>
+              <span>⊕</span>
               {creating ? '作成中...' : 'デュオルームを作成'}
             </button>
           </div>
+
+          {/* ルーム参加カード */}
           <div className="lobby-card">
-            <div className="lobby-card-title">🚪 ルームに参加</div>
-            <form className="lobby-join-form" onSubmit={handleJoin}>
-              <div className="form-group">
-                <label className="form-label" htmlFor="joinCode">ルームコード</label>
-                <input
-                  className="form-input"
-                  id="joinCode"
-                  type="text"
-                  value={joinCode}
-                  onChange={e => setJoinCode(e.target.value)}
-                  placeholder="XXXXXX"
-                  maxLength={6}
-                />
-              </div>
-              <button className="btn btn-primary" type="submit" disabled={joining}>
-                {joining ? '参加中...' : '参加する'}
+            <div className="lobby-hero-deco" aria-hidden="true">🚪</div>
+            <div className="lobby-card-title">ルームに参加</div>
+            <p className="lobby-card-desc">ルームコードを入力して、友達のゲームに参加しましょう。</p>
+            <form className="lobby-join-row" onSubmit={handleJoin}>
+              <input
+                className="lobby-join-input"
+                id="joinCode"
+                type="text"
+                aria-label="ルームコード"
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value)}
+                placeholder="ルームコードを入力..."
+                maxLength={6}
+              />
+              <button className="lobby-join-submit" type="submit" disabled={joining} aria-label="参加する">
+                →
               </button>
             </form>
           </div>
         </div>
+
+        {/* 最近の対戦履歴 */}
         <div>
-          <div className="lobby-section-title">📋 最近のゲーム</div>
+          <div className="lobby-section-header">
+            <span className="lobby-section-title">🕐 最近の対戦履歴</span>
+          </div>
           {histories.length === 0 ? (
             <p className="empty-msg">まだゲームの記録がありません</p>
           ) : (
-            <ul className="history-list">
+            <ul className="history-card-list">
               {histories.map(h => (
-                <li className="history-item" key={h.id}>
-                  <span className="history-code">{h.room_code}</span>
-                  <span className="history-rank">{h.rank}位 / {h.player_count}人中</span>
-                  <span className="history-score">{h.score}pt</span>
-                  <span className="history-date">{new Date(h.played_at).toLocaleDateString('ja-JP')}</span>
+                <li className="history-card" key={h.id}>
+                  <div className="history-card-top">
+                    <span className="history-card-rank">{h.rank}位</span>
+                    <span className="history-card-time">{timeAgo(h.played_at)}</span>
+                  </div>
+                  <div className="history-card-body">
+                    <div className="history-card-icon">🎨</div>
+                    <div>
+                      <div className="history-card-code">{h.room_code}</div>
+                      <div className="history-card-score">スコア: {h.score} pt</div>
+                    </div>
+                  </div>
+                  <div className="history-card-footer">
+                    {h.player_count}人参加
+                  </div>
                 </li>
               ))}
             </ul>

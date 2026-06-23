@@ -331,6 +331,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ── Lobby page ───────────────────────────────────────────────── */
+/* ── Lobby layout ─────────────────────────────────────────────── */
 .lobby-layout {
   flex: 1;
   display: flex;
@@ -338,12 +339,13 @@ a:hover { text-decoration: underline; }
   background: var(--bg-subtle);
 }
 
+/* ── Header ───────────────────────────────────────────────────── */
 .lobby-header {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 24px;
+  padding: 12px 20px;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   gap: 12px;
@@ -351,28 +353,55 @@ a:hover { text-decoration: underline; }
 
 .lobby-header-logo {
   font-size: 18px;
-  font-weight: 700;
-  color: var(--text-h);
+  font-weight: 800;
+  color: var(--accent);
   display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: -0.3px;
+}
+
+/* デスクトップ右側ナビ */
+.lobby-header-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+/* モバイル右側（アバター＋ハンバーガー） */
+.lobby-header-mobile {
+  display: none;
   align-items: center;
   gap: 8px;
 }
 
-.lobby-header-user {
+/* アバター丸アイコン */
+.lobby-avatar-circle {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 14px;
-  color: var(--text);
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  border: 2px solid var(--accent-border);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity .15s;
 }
+.lobby-avatar-circle:hover { opacity: .8; text-decoration: none; }
 
-/* ── Hamburger（モバイル専用） ─────────────────────────────────── */
+/* ── Hamburger ────────────────────────────────────────────────── */
 .lobby-hamburger {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   padding: 0;
   background: none;
   border: 1px solid var(--border);
@@ -397,7 +426,7 @@ a:hover { text-decoration: underline; }
   right: 0;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,.08);
   display: flex;
   flex-direction: column;
   z-index: 100;
@@ -426,126 +455,255 @@ a:hover { text-decoration: underline; }
   border-bottom: 1px solid var(--border);
   text-align: left;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background .15s;
 }
 .lobby-menu-item:last-child { border-bottom: none; }
 .lobby-menu-item:hover { background: var(--bg-subtle); }
 .lobby-menu-item--danger { color: var(--red); }
 
 @media (max-width: 540px) {
-  .lobby-header-user { display: none; }
-  .lobby-hamburger  { display: flex; }
+  .lobby-header-user  { display: none; }
+  .lobby-header-mobile { display: flex; }
 }
 
+/* ── Main content ─────────────────────────────────────────────── */
 .lobby-main {
   flex: 1;
   max-width: 760px;
   width: 100%;
   margin: 0 auto;
-  padding: 32px 16px;
+  padding: 24px 16px 40px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
+/* ── Card grid ────────────────────────────────────────────────── */
 .lobby-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
-@media (max-width: 540px) {
+@media (max-width: 680px) {
   .lobby-grid { grid-template-columns: 1fr; }
 }
 
 .lobby-card {
+  position: relative;
+  overflow: hidden;
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 20px;
   padding: 24px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .lobby-card--duo {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
 }
-.btn-duo {
-  display: inline-flex;
+
+.lobby-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+  position: relative;
+}
+
+.lobby-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  flex: 1;
+  position: relative;
+}
+
+/* カード右上の装飾絵文字 */
+.lobby-hero-deco {
+  position: absolute;
+  right: -8px;
+  top: -8px;
+  font-size: 80px;
+  opacity: .1;
+  pointer-events: none;
+  line-height: 1;
+  transform: rotate(10deg);
+  user-select: none;
+}
+
+/* ピル形ボタン */
+.lobby-hero-btn {
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 16px;
   background: var(--accent);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 50px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.15s;
-  width: 100%;
+  transition: background .15s, box-shadow .15s;
+  position: relative;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
 }
-.btn-duo:hover:not(:disabled) { opacity: 0.85; }
-.btn-duo:disabled { opacity: 0.5; cursor: not-allowed; }
+.lobby-hero-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow);
+}
+.lobby-hero-btn:disabled { opacity: .5; cursor: not-allowed; }
 
-.lobby-card-title {
-  font-size: 16px;
-  font-weight: 600;
+/* ルームコード入力行 */
+.lobby-join-row {
+  display: flex;
+  gap: 8px;
+  position: relative;
+}
+
+.lobby-join-input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 18px;
+  border: 1.5px solid var(--accent-border);
+  border-radius: 50px;
+  font-size: 15px;
+  background: var(--bg);
   color: var(--text-h);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lobby-join-input::placeholder { color: var(--text-muted); }
+.lobby-join-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.lobby-join-submit {
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
 }
-.lobby-card-desc {
-  font-size: 14px;
-  color: var(--text);
-}
+.lobby-join-submit:hover:not(:disabled) { background: var(--accent-hover); }
+.lobby-join-submit:disabled { opacity: .5; cursor: not-allowed; }
 
-.lobby-join-form { display: flex; flex-direction: column; gap: 10px; }
+/* ── Section header ───────────────────────────────────────────── */
+.lobby-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
 
 .lobby-section-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-h);
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
 }
 
-.history-list {
+/* ── History cards ────────────────────────────────────────────── */
+.history-card-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.history-item {
+.history-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-card-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  font-size: 14px;
+}
+
+.history-card-rank {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.history-card-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.history-card-body {
+  display: flex;
+  align-items: center;
   gap: 12px;
 }
 
-.history-code {
-  font-weight: 600;
-  color: var(--text-h);
-  font-family: monospace;
-  font-size: 15px;
+.history-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
 }
 
-.history-rank { color: var(--accent); font-weight: 600; }
-.history-score { color: var(--text-h); font-weight: 600; }
-.history-date { color: var(--text-muted); font-size: 13px; margin-left: auto; }
+.history-card-code {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-family: monospace;
+  letter-spacing: 1px;
+}
+
+.history-card-score {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.history-card-footer {
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
 
 .empty-msg { color: var(--text-muted); font-size: 14px; text-align: center; padding: 20px 0; }
+
+/* 旧クラス（ゲーム画面等で使用）*/
+.lobby-user-avatar { font-size: 18px; }
 
 /* ── Game page ────────────────────────────────────────────────── */
 .game-layout {
