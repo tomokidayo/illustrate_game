@@ -541,17 +541,18 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 15px;
+  padding: 13px 16px;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 50px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
   transition: background .15s, box-shadow .15s;
   position: relative;
-  letter-spacing: 0.3px;
+  white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 .lobby-hero-btn:hover:not(:disabled) {
   background: var(--accent-hover);
@@ -568,6 +569,7 @@ a:hover { text-decoration: underline; }
 
 .lobby-join-input {
   flex: 1;
+  min-width: 0;
   padding: 12px 18px;
   border: 1.5px solid var(--accent-border);
   border-radius: 50px;
