@@ -388,9 +388,11 @@ export default function Game() {
       {isDrawer && turn?.topic && (
         <div className="game-drawer-banner">
           ✏️ あなたが絵描き役です！　お題：{turn.topic}
-          <span className={`difficulty-badge difficulty-badge--${turn.difficulty} difficulty-badge--inline`}>
-            {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
-          </span>
+          {gameMode !== 'normal' && (
+            <span className={`difficulty-badge difficulty-badge--${turn.difficulty} difficulty-badge--inline`}>
+              {'⭐'.repeat(turn.difficulty)} {DIFFICULTY_LABEL[turn.difficulty]}
+            </span>
+          )}
         </div>
       )}
 
