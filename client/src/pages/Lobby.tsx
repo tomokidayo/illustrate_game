@@ -185,6 +185,7 @@ export default function Lobby() {
                 className="lobby-join-input"
                 id="joinCode"
                 type="text"
+                aria-label="ルームコード"
                 value={joinCode}
                 onChange={e => setJoinCode(e.target.value)}
                 placeholder="ルームコードを入力..."
