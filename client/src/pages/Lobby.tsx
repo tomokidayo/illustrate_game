@@ -152,53 +152,49 @@ export default function Lobby() {
       <main className="lobby-main">
         {error && <p className="error-msg" role="alert">{error}</p>}
 
-        {/* ヒーローカード：ルーム作成・参加 */}
-        <div className="lobby-hero">
-          <div className="lobby-hero-deco" aria-hidden="true">🌳</div>
-          <p className="lobby-hero-greeting">おかえりなさい、{user?.username}！</p>
-          <p className="lobby-hero-desc">木の葉の間から日が差し込み、キャンバスがあなたを待っています。</p>
-          <button
-            className="lobby-hero-btn"
-            type="button"
-            onClick={() => handleCreate()}
-            disabled={creating}
-          >
-            <span>⊕</span>
-            {creating ? '作成中...' : '部屋を作る'}
-          </button>
-          <form className="lobby-join-row" onSubmit={handleJoin}>
-            <input
-              className="lobby-join-input"
-              type="text"
-              value={joinCode}
-              onChange={e => setJoinCode(e.target.value)}
-              placeholder="ルームコードを入力..."
-              maxLength={6}
-              id="joinCode"
-            />
-            <button className="lobby-join-submit" type="submit" disabled={joining} aria-label="参加する">
-              →
+        <div className="lobby-grid">
+          {/* 対戦ルーム作成カード */}
+          <div className="lobby-card">
+            <div className="lobby-hero-deco" aria-hidden="true">🎨</div>
+            <div className="lobby-card-title">対戦ルームを作成</div>
+            <p className="lobby-card-desc">新しいゲームルームを作成して、友達を招待しましょう。3人以上で遊べるよ。</p>
+            <button className="lobby-hero-btn" type="button" onClick={() => handleCreate()} disabled={creating}>
+              <span>⊕</span>
+              {creating ? '作成中...' : '部屋を作る'}
             </button>
-          </form>
-        </div>
-
-        {/* デュオカード */}
-        <div className="lobby-duo-card">
-          <div className="lobby-duo-card-inner">
-            <div className="lobby-duo-icon">👫</div>
-            <div>
-              <div className="lobby-duo-title">二人で遊ぶ</div>
-              <div className="lobby-duo-desc">2人で協力してステージをクリア！</div>
-            </div>
           </div>
-          <button
-            className="lobby-duo-btn"
-            type="button"
-            onClick={() => handleCreate(true)}
-            disabled={creating}
-          >
-            {creating ? '作成中...' : 'デュオルームを作成'}
-          </button>
+
+          {/* デュオカード */}
+          <div className="lobby-card lobby-card--duo">
+            <div className="lobby-hero-deco" aria-hidden="true">👫</div>
+            <div className="lobby-card-title">二人で遊ぶ</div>
+            <p className="lobby-card-desc">2人で協力してステージをクリア！難易度別に4レベル挑戦できます。</p>
+            <button className="lobby-hero-btn" type="button" onClick={() => handleCreate(true)} disabled={creating}>
+              <span>⊕</span>
+              {creating ? '作成中...' : 'デュオルームを作成'}
+            </button>
+          </div>
+
+          {/* ルーム参加カード */}
+          <div className="lobby-card">
+            <div className="lobby-hero-deco" aria-hidden="true">🚪</div>
+            <div className="lobby-card-title">ルームに参加</div>
+            <p className="lobby-card-desc">ルームコードを入力して、友達のゲームに参加しましょう。</p>
+            <form className="lobby-join-row" onSubmit={handleJoin}>
+              <input
+                className="lobby-join-input"
+                id="joinCode"
+                type="text"
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value)}
+                placeholder="ルームコードを入力..."
+                maxLength={6}
+              />
+              <button className="lobby-join-submit" type="submit" disabled={joining} aria-label="参加する">
+                →
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* 最近の対戦履歴 */}

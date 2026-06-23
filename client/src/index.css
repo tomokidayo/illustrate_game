@@ -469,7 +469,7 @@ a:hover { text-decoration: underline; }
 /* ── Main content ─────────────────────────────────────────────── */
 .lobby-main {
   flex: 1;
-  max-width: 520px;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
   padding: 24px 16px 40px;
@@ -478,47 +478,63 @@ a:hover { text-decoration: underline; }
   gap: 20px;
 }
 
-/* ── Hero card ────────────────────────────────────────────────── */
-.lobby-hero {
-  position: relative;
-  overflow: hidden;
-  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
-  border: 1px solid var(--accent-border);
-  border-radius: 20px;
-  padding: 28px 24px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  box-shadow: var(--shadow-sm);
+/* ── Card grid ────────────────────────────────────────────────── */
+.lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 680px) {
+  .lobby-grid { grid-template-columns: 1fr; }
 }
 
+.lobby-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lobby-card--duo {
+  border-color: var(--accent-border);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.lobby-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-h);
+  position: relative;
+}
+
+.lobby-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  flex: 1;
+  position: relative;
+}
+
+/* カード右上の装飾絵文字 */
 .lobby-hero-deco {
   position: absolute;
-  right: -12px;
-  top: -10px;
-  font-size: 100px;
-  opacity: .12;
+  right: -8px;
+  top: -8px;
+  font-size: 80px;
+  opacity: .1;
   pointer-events: none;
   line-height: 1;
   transform: rotate(10deg);
   user-select: none;
 }
 
-.lobby-hero-greeting {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--accent);
-  position: relative;
-}
-
-.lobby-hero-desc {
-  font-size: 14px;
-  color: var(--text);
-  line-height: 1.7;
-  position: relative;
-}
-
-/* ヒーロー：部屋を作るボタン（ピル形） */
+/* ピル形ボタン */
 .lobby-hero-btn {
   display: flex;
   align-items: center;
@@ -584,65 +600,6 @@ a:hover { text-decoration: underline; }
 }
 .lobby-join-submit:hover:not(:disabled) { background: var(--accent-hover); }
 .lobby-join-submit:disabled { opacity: .5; cursor: not-allowed; }
-
-/* ── Duo card ─────────────────────────────────────────────────── */
-.lobby-duo-card {
-  background: var(--bg);
-  border: 1.5px solid var(--accent-border);
-  border-radius: 16px;
-  padding: 18px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  box-shadow: var(--shadow-sm);
-}
-
-.lobby-duo-card-inner {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.lobby-duo-icon {
-  font-size: 28px;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: var(--accent-light);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.lobby-duo-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-h);
-}
-
-.lobby-duo-desc {
-  font-size: 13px;
-  color: var(--text-muted);
-  margin-top: 2px;
-}
-
-.lobby-duo-btn {
-  white-space: nowrap;
-  padding: 10px 16px;
-  background: var(--accent);
-  color: #fff;
-  border: none;
-  border-radius: 50px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background .15s;
-  flex-shrink: 0;
-}
-.lobby-duo-btn:hover:not(:disabled) { background: var(--accent-hover); }
-.lobby-duo-btn:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Section header ───────────────────────────────────────────── */
 .lobby-section-header {
