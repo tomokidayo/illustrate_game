@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import pool from '../db';
 
 export const register = async (req: Request, res: Response) => {
@@ -59,6 +60,25 @@ export const logout = async (req: Request, res: Response) => {
     [req.token, decoded.exp]
   );
   res.json({ message: 'Logged out' });
+};
+
+/**
+ * ゲストユーザー用の一時JWTを発行する（DBへの登録なし）
+ * @route POST /api/auth/guest
+ */
+export const guestLogin = (req: Request, res: Response): void => {
+  const { username } = req.body as { username: string };
+  if (!username || username.trim().length < 2 || username.trim().length > 20) {
+    res.status(400).json({ error: 'ユーザー名は2〜20文字で入力してください' }); return;
+  }
+  const name = username.trim();
+  const guestId = `guest_${randomUUID()}`;
+  const token = jwt.sign(
+    { id: guestId, username: name, isGuest: true },
+    process.env.JWT_SECRET as string,
+    { expiresIn: '24h' }
+  );
+  res.json({ token, user: { id: guestId, username: name, isGuest: true } });
 };
 
 export const me = async (req: Request, res: Response) => {

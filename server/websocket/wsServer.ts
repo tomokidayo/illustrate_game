@@ -5,7 +5,7 @@ import pool from '../db';
 import { handle, handleDisconnect } from './gameManager';
 
 export interface AuthedWebSocket extends WebSocket {
-  user?: { id: string; username: string };
+  user?: { id: string; username: string; isGuest?: boolean };
 }
 
 export function initWsServer(server: Server): WebSocketServer {

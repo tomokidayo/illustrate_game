@@ -37,7 +37,7 @@ export function useWebSocket(onMessage: WsMessageHandler, onOpen?: () => void) {
       const wsUrl = base
         ? base.replace(/^http/, 'ws')
         : `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
-      const token = localStorage.getItem('token') ?? '';
+      const token = localStorage.getItem('token') ?? sessionStorage.getItem('token') ?? '';
       const ws = new WebSocket(`${wsUrl}?token=${encodeURIComponent(token)}`);
       wsRef.current = ws;
 

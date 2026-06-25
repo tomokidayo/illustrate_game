@@ -8,13 +8,18 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   if (!token) { res.status(401).json({ error: 'Token required' }); return; }
 
   try {
-    const { rows } = await pool.query(
-      'SELECT id FROM token_blacklist WHERE token = $1',
-      [token]
-    );
-    if (rows.length > 0) { res.status(401).json({ error: 'Token revoked' }); return; }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; username: string; isGuest?: boolean };
 
-    req.user = jwt.verify(token, process.env.JWT_SECRET as string) as { id: string; username: string };
+    // ゲストトークンはブラックリスト対象外（DBにユーザーレコードが存在しない）
+    if (!decoded.isGuest) {
+      const { rows } = await pool.query(
+        'SELECT id FROM token_blacklist WHERE token = $1',
+        [token]
+      );
+      if (rows.length > 0) { res.status(401).json({ error: 'Token revoked' }); return; }
+    }
+
+    req.user = decoded;
     req.token = token;
     next();
   } catch {
