@@ -394,6 +394,12 @@ a:hover { text-decoration: underline; }
   transition: opacity .15s;
 }
 .lobby-avatar-circle:hover { opacity: .8; text-decoration: none; }
+.lobby-avatar-circle--guest {
+  background: var(--bg-subtle);
+  border-color: var(--border);
+  color: var(--text-muted);
+  cursor: default;
+}
 
 /* ── Hamburger ────────────────────────────────────────────────── */
 .lobby-hamburger {

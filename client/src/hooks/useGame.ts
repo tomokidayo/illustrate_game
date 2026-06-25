@@ -194,6 +194,10 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
         const ps = payload.players as Player[];
         setPlayers(ps);
         setGameStatus(prev => prev === 'connecting' ? 'waiting' : prev);
+        // WS側のhostUserId（ゲスト作成ルームも正しく反映される）
+        if (payload.hostUserId !== undefined) {
+          setIsHost(payload.hostUserId === userId);
+        }
         break;
       }
 
@@ -369,8 +373,9 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   });
 
   useEffect(() => {
-    api.get<{ host_user_id: string }>(`/api/rooms/${roomCode}`)
-      .then(res => setIsHost(res.data.host_user_id === userId))
+    api.get<{ host_user_id: string | null }>(`/api/rooms/${roomCode}`)
+      // host_user_id が null のルーム（ゲスト作成）は WS の room:players_updated で判定する
+      .then(res => { if (res.data.host_user_id !== null) setIsHost(res.data.host_user_id === userId); })
       .catch(() => {});
   }, [roomCode, userId]);
 

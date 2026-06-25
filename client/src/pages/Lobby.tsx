@@ -1,6 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { isAxiosError } from 'axios';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
 
@@ -43,43 +42,48 @@ export default function Lobby() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
+    if (!user || user.isGuest) return;
     api.get<GameHistoryEntry[]>('/api/game-histories')
       .then(res => setHistories(res.data))
       .catch(err => console.error('Failed to fetch game histories:', err));
-  }, []);
+  }, [user]);
 
-  const handleCreate = async (isDuo = false) => {
+  const handleCreate = (isDuo = false) => {
     setError('');
-    setCreating(true);
-    try {
-      const { data } = await api.post<{ room_code: string }>('/api/rooms');
-      navigate(`/room/${data.room_code}`, isDuo ? { state: { isDuoRoom: true } } : undefined);
-    } catch (err) {
-      setError(isAxiosError(err) ? err.response?.data?.error ?? 'ルーム作成に失敗しました' : 'ルーム作成に失敗しました');
-    } finally {
-      setCreating(false);
+    if (!user) {
+      navigate('/guest-username', { state: { action: isDuo ? 'create-duo' : 'create' } });
+      return;
     }
+    setCreating(true);
+    api.post<{ room_code: string }>('/api/rooms')
+      .then(({ data }) => {
+        navigate(`/room/${data.room_code}`, isDuo ? { state: { isDuoRoom: true } } : undefined);
+      })
+      .catch(() => setError('ルーム作成に失敗しました'))
+      .finally(() => setCreating(false));
   };
 
-  const handleJoin = async (e: FormEvent<HTMLFormElement>) => {
+  const handleJoin = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const code = joinCode.trim().toUpperCase();
     if (!code) { setError('ルームコードを入力してください'); return; }
     setError('');
-    setJoining(true);
-    try {
-      await api.post(`/api/rooms/${code}/join`);
-      navigate(`/room/${code}`);
-    } catch (err) {
-      setError(isAxiosError(err) ? err.response?.data?.error ?? 'ルームへの参加に失敗しました' : 'ルームへの参加に失敗しました');
-    } finally {
-      setJoining(false);
+
+    if (!user) {
+      navigate('/guest-username', { state: { action: 'join', roomCode: code } });
+      return;
     }
+
+    setJoining(true);
+    api.post(`/api/rooms/${code}/join`)
+      .then(() => navigate(`/room/${code}`))
+      .catch(() => setError('ルームへの参加に失敗しました'))
+      .finally(() => setJoining(false));
   };
 
   const handleLogout = async () => {
     await logout();
-    navigate('/login');
+    navigate('/lobby');
   };
 
   return (
@@ -90,20 +94,45 @@ export default function Lobby() {
         {/* デスクトップ用ナビ */}
         <div className="lobby-header-user">
           <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
-          {user?.username === ADMIN_USERNAME && (
-            <Link className="btn btn-ghost btn-sm" to="/admin/users">管理者</Link>
+          {user ? (
+            <>
+              {user.username === ADMIN_USERNAME && (
+                <Link className="btn btn-ghost btn-sm" to="/admin/users">管理者</Link>
+              )}
+              <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>
+                {user.isGuest ? 'ゲスト終了' : 'ログアウト'}
+              </button>
+              {!user.isGuest && (
+                <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
+                  {user.avatar ?? user.username?.[0]?.toUpperCase() ?? '?'}
+                </Link>
+              )}
+              {user.isGuest && (
+                <span className="lobby-avatar-circle lobby-avatar-circle--guest" title={`ゲスト: ${user.username}`}>
+                  {user.username?.[0]?.toUpperCase() ?? '?'}
+                </span>
+              )}
+            </>
+          ) : (
+            <Link className="btn btn-primary btn-sm" to="/login">ログイン</Link>
           )}
-          <button className="btn btn-ghost btn-sm" type="button" onClick={handleLogout}>ログアウト</button>
-          <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
-            {user?.avatar ?? user?.username?.[0]?.toUpperCase() ?? '?'}
-          </Link>
         </div>
 
         {/* モバイル用：アバター + ハンバーガー */}
         <div className="lobby-header-mobile">
-          <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
-            {user?.avatar ?? user?.username?.[0]?.toUpperCase() ?? '?'}
-          </Link>
+          {user ? (
+            user.isGuest ? (
+              <span className="lobby-avatar-circle lobby-avatar-circle--guest" title={`ゲスト: ${user.username}`}>
+                {user.username?.[0]?.toUpperCase() ?? '?'}
+              </span>
+            ) : (
+              <Link className="lobby-avatar-circle" to="/profile" title="マイページ">
+                {user.avatar ?? user.username?.[0]?.toUpperCase() ?? '?'}
+              </Link>
+            )
+          ) : (
+            <Link className="btn btn-primary btn-sm" to="/login">ログイン</Link>
+          )}
           <button
             className="lobby-hamburger"
             type="button"
@@ -122,13 +151,19 @@ export default function Lobby() {
           <>
             <div className="lobby-menu-overlay" onClick={() => setMenuOpen(false)} />
             <nav className="lobby-menu-dropdown">
-              <div className="lobby-menu-user">
-                {user?.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
-                <span className="lobby-menu-username">{user?.username}</span>
-              </div>
-              <Link className="lobby-menu-item" to="/profile" onClick={() => setMenuOpen(false)}>
-                マイページ
-              </Link>
+              {user && (
+                <div className="lobby-menu-user">
+                  {user.avatar && <span className="lobby-user-avatar">{user.avatar}</span>}
+                  <span className="lobby-menu-username">
+                    {user.username}{user.isGuest && ' (ゲスト)'}
+                  </span>
+                </div>
+              )}
+              {user && !user.isGuest && (
+                <Link className="lobby-menu-item" to="/profile" onClick={() => setMenuOpen(false)}>
+                  マイページ
+                </Link>
+              )}
               <Link className="lobby-menu-item" to="/rules" onClick={() => setMenuOpen(false)}>
                 ルール
               </Link>
@@ -137,13 +172,19 @@ export default function Lobby() {
                   管理者
                 </Link>
               )}
-              <button
-                className="lobby-menu-item lobby-menu-item--danger"
-                type="button"
-                onClick={() => { setMenuOpen(false); handleLogout(); }}
-              >
-                ログアウト
-              </button>
+              {user ? (
+                <button
+                  className="lobby-menu-item lobby-menu-item--danger"
+                  type="button"
+                  onClick={() => { setMenuOpen(false); handleLogout(); }}
+                >
+                  {user.isGuest ? 'ゲスト終了' : 'ログアウト'}
+                </button>
+              ) : (
+                <Link className="lobby-menu-item" to="/login" onClick={() => setMenuOpen(false)}>
+                  ログイン
+                </Link>
+              )}
             </nav>
           </>
         )}
@@ -198,36 +239,38 @@ export default function Lobby() {
           </div>
         </div>
 
-        {/* 最近の対戦履歴 */}
-        <div>
-          <div className="lobby-section-header">
-            <span className="lobby-section-title">🕐 最近の対戦履歴</span>
-          </div>
-          {histories.length === 0 ? (
-            <p className="empty-msg">まだゲームの記録がありません</p>
-          ) : (
-            <ul className="history-card-list">
-              {histories.map(h => (
-                <li className="history-card" key={h.id}>
-                  <div className="history-card-top">
-                    <span className="history-card-rank">{h.rank}位</span>
-                    <span className="history-card-time">{timeAgo(h.played_at)}</span>
-                  </div>
-                  <div className="history-card-body">
-                    <div className="history-card-icon">🎨</div>
-                    <div>
-                      <div className="history-card-code">{h.room_code}</div>
-                      <div className="history-card-score">スコア: {h.score} pt</div>
+        {/* 最近の対戦履歴（登録ユーザーのみ） */}
+        {user && !user.isGuest && (
+          <div>
+            <div className="lobby-section-header">
+              <span className="lobby-section-title">🕐 最近の対戦履歴</span>
+            </div>
+            {histories.length === 0 ? (
+              <p className="empty-msg">まだゲームの記録がありません</p>
+            ) : (
+              <ul className="history-card-list">
+                {histories.map(h => (
+                  <li className="history-card" key={h.id}>
+                    <div className="history-card-top">
+                      <span className="history-card-rank">{h.rank}位</span>
+                      <span className="history-card-time">{timeAgo(h.played_at)}</span>
                     </div>
-                  </div>
-                  <div className="history-card-footer">
-                    {h.player_count}人参加
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                    <div className="history-card-body">
+                      <div className="history-card-icon">🎨</div>
+                      <div>
+                        <div className="history-card-code">{h.room_code}</div>
+                        <div className="history-card-score">スコア: {h.score} pt</div>
+                      </div>
+                    </div>
+                    <div className="history-card-footer">
+                      {h.player_count}人参加
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

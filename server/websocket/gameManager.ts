@@ -89,7 +89,7 @@ function broadcast(room: RoomState, type: string, payload?: unknown): void {
 /** プレイヤー一覧更新をブロードキャストする */
 function broadcastPlayersUpdated(room: RoomState): void {
   const players = room.players.map(({ userId, username, avatar, score }) => ({ userId, username, avatar, score }));
-  broadcast(room, 'room:players_updated', { players });
+  broadcast(room, 'room:players_updated', { players, hostUserId: room.hostUserId });
 }
 
 /** Fisher-Yates シャッフル */
@@ -141,8 +141,12 @@ async function saveGameHistory(
   room: RoomState,
   scores: Array<{ userId: string; username: string; score: number }>
 ): Promise<void> {
+  // 登録ユーザーがいない場合は履歴保存をスキップ
+  const registeredScores = scores.filter(p => !p.userId.startsWith('guest_'));
+  if (registeredScores.length === 0) return;
+
   try {
-    const sorted = [...scores].sort((a, b) => b.score - a.score);
+    const sorted = [...registeredScores].sort((a, b) => b.score - a.score);
     const { rows: [history] } = await pool.query<{ id: string }>(
       'INSERT INTO game_histories (room_id, room_code) VALUES ($1, $2) RETURNING id',
       [room.roomId, room.roomCode]
@@ -166,13 +170,16 @@ async function saveGameHistory(
  * @param cleared - クリア成功かどうか
  */
 async function saveDuoHistory(room: RoomState, cleared: boolean): Promise<void> {
+  const registeredPlayers = room.players.filter(p => !p.userId.startsWith('guest_'));
+  if (registeredPlayers.length === 0) return;
+
   try {
     const { rows: [history] } = await pool.query<{ id: string }>(
       'INSERT INTO game_histories (room_id, room_code, mode, best_streak, duo_level) VALUES ($1, $2, $3, $4, $5) RETURNING id',
       [room.roomId, room.roomCode, 'duo', room.duoCorrectCount, room.duoLevel]
     );
     await Promise.all(
-      room.players.map(player =>
+      registeredPlayers.map(player =>
         pool.query(
           'INSERT INTO game_scores (game_id, user_id, username, score, rank) VALUES ($1, $2, $3, $4, $5)',
           [history.id, player.userId, player.username, cleared ? 1 : 0, 1]
@@ -419,24 +426,70 @@ function startTurn(room: RoomState): void {
 }
 
 /**
- * room:join ハンドラ：DBでメンバーシップを確認してルームに接続する
+ * room:join ハンドラ：登録ユーザーはDBでメンバーシップを確認、ゲストはルーム存在確認のみ行う
  */
 async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unknown>): Promise<void> {
   const roomCode = payload.roomCode as string;
   if (!roomCode || !ws.user) return;
 
-  const { rows } = await pool.query<{ id: string; host_user_id: string; status: string; avatar: string | null }>(
-    `SELECT r.id, r.host_user_id, r.status, u.avatar
-     FROM rooms r
-     JOIN room_players rp ON rp.room_id = r.id
-     JOIN users u ON u.id = rp.user_id
-     WHERE r.room_code = $1 AND rp.user_id = $2`,
-    [roomCode, ws.user.id]
-  );
-  if (!rows[0]) { send(ws, 'error', { message: 'Not in room' }); return; }
+  const isGuest = ws.user.isGuest === true;
+  let roomId: string;
+  let hostUserId: string;
+  let status: string;
+  let avatar: string | null = null;
 
-  const { id: roomId, host_user_id: hostUserId, status, avatar } = rows[0];
-  let room = rooms.get(roomCode);
+  if (isGuest) {
+    const { rows } = await pool.query<{ id: string; host_user_id: string | null; status: string }>(
+      'SELECT id, host_user_id, status FROM rooms WHERE room_code = $1',
+      [roomCode]
+    );
+    if (!rows[0]) { send(ws, 'error', { message: 'Room not found' }); return; }
+    roomId = rows[0].id;
+    // host_user_id が NULL（ゲスト作成ルーム）の場合、最初に接続するユーザーをホストとする
+    hostUserId = rows[0].host_user_id ?? ws.user.id;
+    status = rows[0].status;
+  } else {
+    const { rows } = await pool.query<{ id: string; host_user_id: string; status: string; avatar: string | null }>(
+      `SELECT r.id, r.host_user_id, r.status, u.avatar
+       FROM rooms r
+       JOIN room_players rp ON rp.room_id = r.id
+       JOIN users u ON u.id = rp.user_id
+       WHERE r.room_code = $1 AND rp.user_id = $2`,
+      [roomCode, ws.user.id]
+    );
+    if (!rows[0]) { send(ws, 'error', { message: 'Not in room' }); return; }
+    roomId = rows[0].id;
+    hostUserId = rows[0].host_user_id;
+    status = rows[0].status;
+    avatar = rows[0].avatar;
+  }
+
+  // ゲームが進行中の場合は再接続のみ許可（同じユーザーIDが既にいる場合）
+  const existingRoom = rooms.get(roomCode);
+  if (existingRoom?.status === 'playing') {
+    const isReconnect = existingRoom.players.some(p => p.userId === ws.user!.id);
+    if (!isReconnect) { send(ws, 'error', { message: 'Game already started' }); return; }
+  }
+
+  if (existingRoom) {
+    // 再接続でない場合の満員チェック（登録ユーザー・ゲスト合計）
+    const isRejoining = existingRoom.players.some(p => p.userId === ws.user!.id);
+    if (!isRejoining && existingRoom.players.length >= 6) {
+      send(ws, 'error', { message: 'ルームが満員です' });
+      return;
+    }
+
+    // ルーム内でのユーザー名重複チェック（再接続は除外）
+    const duplicate = existingRoom.players.find(
+      p => p.username === ws.user!.username && p.userId !== ws.user!.id
+    );
+    if (duplicate) {
+      send(ws, 'error', { message: 'このユーザー名はすでに使用されています' });
+      return;
+    }
+  }
+
+  let room = existingRoom;
   if (!room) {
     room = {
       roomId,
