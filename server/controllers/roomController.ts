@@ -60,13 +60,13 @@ export const join = async (req: Request, res: Response): Promise<void> => {
   if (!room[0]) { res.status(404).json({ error: 'Room not found' }); return; }
   if (room[0].status !== 'waiting') { res.status(400).json({ error: 'Game already started' }); return; }
 
-  if (!isGuest) {
-    const { rows: players } = await pool.query<RoomPlayer>(
-      'SELECT * FROM room_players WHERE room_id = $1',
-      [room[0].id]
-    );
-    if (players.length >= 6) { res.status(400).json({ error: 'Room is full' }); return; }
+  const { rows: players } = await pool.query<RoomPlayer>(
+    'SELECT * FROM room_players WHERE room_id = $1',
+    [room[0].id]
+  );
+  if (players.length >= 6) { res.status(400).json({ error: 'Room is full' }); return; }
 
+  if (!isGuest) {
     await pool.query(
       'INSERT INTO room_players (room_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
       [room[0].id, req.user!.id]

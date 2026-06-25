@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useAuth } from '../context/AuthContext';
 import api from '../utils/api';
@@ -88,7 +88,7 @@ export default function GuestUsername() {
 
         <p className="auth-link-text">
           アカウントをお持ちの方は
-          <a className="auth-link" href="/login">こちら</a>
+          <Link className="auth-link" to="/login">こちら</Link>
         </p>
       </div>
     </div>

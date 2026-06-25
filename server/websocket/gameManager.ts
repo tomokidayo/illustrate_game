@@ -471,8 +471,15 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
     if (!isReconnect) { send(ws, 'error', { message: 'Game already started' }); return; }
   }
 
-  // ルーム内でのユーザー名重複チェック（再接続は除外）
   if (existingRoom) {
+    // 再接続でない場合の満員チェック（登録ユーザー・ゲスト合計）
+    const isRejoining = existingRoom.players.some(p => p.userId === ws.user!.id);
+    if (!isRejoining && existingRoom.players.length >= 6) {
+      send(ws, 'error', { message: 'ルームが満員です' });
+      return;
+    }
+
+    // ルーム内でのユーザー名重複チェック（再接続は除外）
     const duplicate = existingRoom.players.find(
       p => p.username === ws.user!.username && p.userId !== ws.user!.id
     );
