@@ -54,6 +54,7 @@ export default function Login() {
         </div>
       </header>
 
+      <div className="login-body">
       <div className="login-header">
         <h1 className="login-title">お絵描きの森</h1>
         <p className="login-subtitle">想像力が広がる、木漏れ日の空間。</p>
@@ -119,6 +120,7 @@ export default function Login() {
         <span className="login-deco-icon login-deco-icon--teal">✏️</span>
         <span className="login-deco-icon login-deco-icon--yellow">🖌️</span>
         <span className="login-deco-icon login-deco-icon--blue">🎨</span>
+      </div>
       </div>
     </div>
   );
