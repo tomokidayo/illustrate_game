@@ -89,7 +89,7 @@ function broadcast(room: RoomState, type: string, payload?: unknown): void {
 /** プレイヤー一覧更新をブロードキャストする */
 function broadcastPlayersUpdated(room: RoomState): void {
   const players = room.players.map(({ userId, username, avatar, score }) => ({ userId, username, avatar, score }));
-  broadcast(room, 'room:players_updated', { players });
+  broadcast(room, 'room:players_updated', { players, hostUserId: room.hostUserId });
 }
 
 /** Fisher-Yates シャッフル */
