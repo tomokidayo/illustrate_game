@@ -359,7 +359,11 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 6px;
   letter-spacing: -0.3px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity .15s;
 }
+.lobby-header-logo:hover { opacity: .75; text-decoration: none; }
 
 /* デスクトップ右側ナビ */
 .lobby-header-user {

@@ -43,6 +43,10 @@ export default function Register() {
 
   return (
     <div className="login-page">
+      <header className="lobby-header">
+        <Link className="lobby-header-logo" to="/lobby">🌲 お絵描きの森</Link>
+      </header>
+
       <div className="login-header">
         <h1 className="login-title">お絵描きの森</h1>
         <p className="login-subtitle">新しい仲間として森に加わりましょう。</p>

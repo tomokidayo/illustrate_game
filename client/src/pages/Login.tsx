@@ -46,6 +46,10 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <header className="lobby-header">
+        <Link className="lobby-header-logo" to="/lobby">🌲 お絵描きの森</Link>
+      </header>
+
       <div className="login-header">
         <h1 className="login-title">お絵描きの森</h1>
         <p className="login-subtitle">想像力が広がる、木漏れ日の空間。</p>
