@@ -45,6 +45,10 @@ export default function Register() {
     <div className="login-page">
       <header className="lobby-header">
         <Link className="lobby-header-logo" to="/lobby">🌲 お絵描きの森</Link>
+        <div className="lobby-header-user">
+          <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
+          <Link className="btn btn-ghost btn-sm" to="/login">ログイン</Link>
+        </div>
       </header>
 
       <div className="login-header">
