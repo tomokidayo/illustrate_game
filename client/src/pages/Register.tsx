@@ -43,6 +43,15 @@ export default function Register() {
 
   return (
     <div className="login-page">
+      <header className="lobby-header">
+        <Link className="lobby-header-logo" to="/lobby">🌲 お絵描きの森</Link>
+        <div className="lobby-header-user">
+          <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
+          <Link className="btn btn-ghost btn-sm" to="/login">ログイン</Link>
+        </div>
+      </header>
+
+      <div className="login-body">
       <div className="login-header">
         <h1 className="login-title">お絵描きの森</h1>
         <p className="login-subtitle">新しい仲間として森に加わりましょう。</p>
@@ -108,6 +117,7 @@ export default function Register() {
         <span className="login-deco-icon login-deco-icon--teal">✏️</span>
         <span className="login-deco-icon login-deco-icon--yellow">🖌️</span>
         <span className="login-deco-icon login-deco-icon--blue">🎨</span>
+      </div>
       </div>
     </div>
   );

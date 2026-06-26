@@ -46,6 +46,15 @@ export default function Login() {
 
   return (
     <div className="login-page">
+      <header className="lobby-header">
+        <Link className="lobby-header-logo" to="/lobby">🌲 お絵描きの森</Link>
+        <div className="lobby-header-user">
+          <Link className="btn btn-ghost btn-sm" to="/rules">ルール</Link>
+          <Link className="btn btn-primary btn-sm" to="/register">新規登録</Link>
+        </div>
+      </header>
+
+      <div className="login-body">
       <div className="login-header">
         <h1 className="login-title">お絵描きの森</h1>
         <p className="login-subtitle">想像力が広がる、木漏れ日の空間。</p>
@@ -111,6 +120,7 @@ export default function Login() {
         <span className="login-deco-icon login-deco-icon--teal">✏️</span>
         <span className="login-deco-icon login-deco-icon--yellow">🖌️</span>
         <span className="login-deco-icon login-deco-icon--blue">🎨</span>
+      </div>
       </div>
     </div>
   );
