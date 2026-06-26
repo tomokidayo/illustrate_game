@@ -35,12 +35,12 @@ describe('Login ページ', () => {
     renderLogin();
     expect(screen.getByLabelText('ユーザー名')).toBeInTheDocument();
     expect(screen.getByLabelText('パスワード')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'ログイン' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '森に入る →' })).toBeInTheDocument();
   });
 
   test('未入力で送信するとエラーが表示される', async () => {
     renderLogin();
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.click(screen.getByRole('button', { name: '森に入る →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ユーザー名とパスワードを入力してください');
     expect(mockedPost).not.toHaveBeenCalled();
   });
@@ -52,7 +52,7 @@ describe('Login ページ', () => {
     renderLogin();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'testuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.click(screen.getByRole('button', { name: '森に入る →' }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/lobby'));
   });
 
@@ -63,7 +63,7 @@ describe('Login ページ', () => {
     renderLogin();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'testuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.click(screen.getByRole('button', { name: '森に入る →' }));
     await waitFor(() => expect(localStorage.getItem('token')).toBe('test-token'));
   });
 
@@ -75,7 +75,7 @@ describe('Login ページ', () => {
     renderLogin();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'testuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'wrongpass');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.click(screen.getByRole('button', { name: '森に入る →' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Invalid credentials'));
   });
 
@@ -84,7 +84,7 @@ describe('Login ページ', () => {
     renderLogin();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'testuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: 'ログイン' }));
+    await userEvent.click(screen.getByRole('button', { name: '森に入る →' }));
     expect(screen.getByRole('button', { name: 'ログイン中...' })).toBeDisabled();
   });
 });

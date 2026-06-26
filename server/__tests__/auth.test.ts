@@ -1,4 +1,5 @@
 import request from 'supertest';
+import jwt from 'jsonwebtoken';
 import app from '../app';
 import pool from '../db';
 
@@ -158,5 +159,49 @@ describe('POST /api/auth/logout', () => {
   test('トークンなしは401', async () => {
     const res = await request(app).post('/api/auth/logout');
     expect(res.status).toBe(401);
+  });
+});
+
+// ─── POST /api/auth/guest ────────────────────────────────────────────────────
+
+describe('POST /api/auth/guest', () => {
+  test('ゲストトークンとユーザー情報が返る', async () => {
+    const res = await request(app).post('/api/auth/guest').send({ username: 'ゲスト太郎' });
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('token');
+    expect(res.body.user.isGuest).toBe(true);
+    expect(res.body.user.id).toMatch(/^guest_/);
+    expect(res.body.user.username).toBe('ゲスト太郎');
+  });
+
+  test('JWTペイロードにisGuest: trueが含まれる', async () => {
+    const res = await request(app).post('/api/auth/guest').send({ username: 'テストゲスト' });
+    expect(res.status).toBe(200);
+    const decoded = jwt.verify(res.body.token as string, process.env.JWT_SECRET as string) as { isGuest: boolean; id: string };
+    expect(decoded.isGuest).toBe(true);
+    expect(decoded.id).toMatch(/^guest_/);
+  });
+
+  test('username未指定は400', async () => {
+    const res = await request(app).post('/api/auth/guest').send({});
+    expect(res.status).toBe(400);
+  });
+
+  test('username短すぎ（1文字）は400', async () => {
+    const res = await request(app).post('/api/auth/guest').send({ username: 'a' });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  test('username長すぎ（21文字）は400', async () => {
+    const res = await request(app).post('/api/auth/guest').send({ username: 'a'.repeat(21) });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBeDefined();
+  });
+
+  test('前後空白トリム後2文字以上であれば登録される', async () => {
+    const res = await request(app).post('/api/auth/guest').send({ username: '  ab  ' });
+    expect(res.status).toBe(200);
+    expect(res.body.user.username).toBe('ab');
   });
 });

@@ -1,7 +1,7 @@
 import { describe, test, expect, vi, beforeEach, Mock } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, MemoryRouterProps } from 'react-router-dom';
 import Game from '../pages/Game';
 import { useGame, UseGameReturn } from '../hooks/useGame';
 
@@ -55,16 +55,23 @@ function buildGame(overrides: Partial<UseGameReturn> = {}): UseGameReturn {
     hasVoted: false,
     werewolfResult: null,
     sendVote: vi.fn(),
+    duoCorrectCount: 0,
+    duoLevel: null,
+    duoResult: null,
     ...overrides,
   };
 }
 
-function renderGame() {
+function renderGame(routerProps?: MemoryRouterProps) {
   return render(
-    <MemoryRouter>
+    <MemoryRouter {...routerProps}>
       <Game />
     </MemoryRouter>
   );
+}
+
+function renderGameDuo() {
+  return renderGame({ initialEntries: [{ pathname: '/room/ROOM01', state: { isDuoRoom: true } }] });
 }
 
 beforeEach(() => {
@@ -241,5 +248,143 @@ describe('ターン終了オーバーレイ', () => {
     renderGame();
     expect(screen.getByText('時間切れ')).toBeInTheDocument();
     expect(screen.getByText(/キリン/)).toBeInTheDocument();
+  });
+});
+
+// ─── デュオモード 待機フェーズ（レベル選択） ──────────────────────────────────
+
+describe('デュオモード 待機フェーズ', () => {
+  const twoPeople = [
+    { userId: 'user-1', username: 'testuser', avatar: null, score: 0 },
+    { userId: 'user-2', username: 'player2', avatar: null, score: 0 },
+  ];
+
+  test('ホストにレベル選択グリッドが表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'waiting', players: twoPeople, isHost: true }));
+    renderGameDuo();
+    expect(screen.getByText(/Lv\.1/)).toBeInTheDocument();
+    expect(screen.getByText(/Lv\.4/)).toBeInTheDocument();
+  });
+
+  test('2人接続でゲーム開始ボタンが有効', () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'waiting', players: twoPeople, isHost: true }));
+    renderGameDuo();
+    expect(screen.getByRole('button', { name: 'ゲーム開始' })).toBeEnabled();
+  });
+
+  test('1人接続ではゲーム開始ボタンが無効', () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'waiting', players: [twoPeople[0]], isHost: true }));
+    renderGameDuo();
+    expect(screen.getByRole('button', { name: 'ゲーム開始' })).toBeDisabled();
+  });
+
+  test('非ホストにはレベル選択グリッドが表示されない', () => {
+    mockedUseGame.mockReturnValue(buildGame({ gameStatus: 'waiting', players: twoPeople, isHost: false }));
+    renderGameDuo();
+    expect(screen.queryByText(/Lv\.1/)).not.toBeInTheDocument();
+  });
+});
+
+// ─── デュオモード プレイフェーズ（進捗バー） ─────────────────────────────────
+
+describe('デュオモード プレイフェーズ', () => {
+  const duoTurn = { drawerId: 'user-2', drawerName: 'player2', turnTimeLeft: 25, gameTimeLeft: 200, difficulty: 1 };
+
+  test('正解数N/7が表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'playing',
+      gameMode: 'duo',
+      turn: duoTurn,
+      duoCorrectCount: 3,
+      duoLevel: 1,
+    }));
+    renderGame();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('7')).toBeInTheDocument();
+  });
+
+  test('スコアボードではなく進捗パネルが表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'playing',
+      gameMode: 'duo',
+      turn: duoTurn,
+      duoCorrectCount: 0,
+      duoLevel: 2,
+    }));
+    renderGame();
+    expect(screen.queryByTestId('scoreboard')).not.toBeInTheDocument();
+    expect(screen.getByText(/7問正解でクリア/)).toBeInTheDocument();
+  });
+});
+
+// ─── デュオモード クリア画面 ──────────────────────────────────────────────────
+
+describe('デュオモード クリア画面', () => {
+  test('「ステージクリア！」とレベルが表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'finished',
+      gameMode: 'duo',
+      duoResult: { cleared: true, level: 2, correctCount: 7, timeLeft: 120 },
+      duoCorrectCount: 7,
+      duoLevel: 2,
+    }));
+    renderGame();
+    expect(screen.getByText('ステージクリア！')).toBeInTheDocument();
+    expect(screen.getByText(/Lv\.2/)).toBeInTheDocument();
+  });
+
+  test('残り時間が mm:ss 形式で表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'finished',
+      gameMode: 'duo',
+      duoResult: { cleared: true, level: 1, correctCount: 7, timeLeft: 90 },
+      duoCorrectCount: 7,
+      duoLevel: 1,
+    }));
+    renderGame();
+    expect(screen.getByText(/1:30/)).toBeInTheDocument();
+  });
+
+  test('「ロビーに戻る」ボタンで /lobby に遷移する', async () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'finished',
+      gameMode: 'duo',
+      duoResult: { cleared: true, level: 1, correctCount: 7, timeLeft: 60 },
+      duoCorrectCount: 7,
+      duoLevel: 1,
+    }));
+    renderGame();
+    await userEvent.click(screen.getByRole('button', { name: 'ロビーに戻る' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/lobby');
+  });
+});
+
+// ─── デュオモード ゲームオーバー画面 ─────────────────────────────────────────
+
+describe('デュオモード ゲームオーバー画面', () => {
+  test('「ゲームオーバー」と正解数が表示される', () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'finished',
+      gameMode: 'duo',
+      duoResult: { cleared: false, level: 1, correctCount: 4 },
+      duoCorrectCount: 4,
+      duoLevel: 1,
+    }));
+    renderGame();
+    expect(screen.getByText('ゲームオーバー')).toBeInTheDocument();
+    expect(screen.getByText(/4 \/ 7 問正解/)).toBeInTheDocument();
+  });
+
+  test('「ロビーに戻る」ボタンで /lobby に遷移する', async () => {
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'finished',
+      gameMode: 'duo',
+      duoResult: { cleared: false, level: 1, correctCount: 2 },
+      duoCorrectCount: 2,
+      duoLevel: 1,
+    }));
+    renderGame();
+    await userEvent.click(screen.getByRole('button', { name: 'ロビーに戻る' }));
+    expect(mockNavigate).toHaveBeenCalledWith('/lobby');
   });
 });

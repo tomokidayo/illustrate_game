@@ -263,3 +263,88 @@ describe('ゲーム進行', () => {
     expect((turnEndPayload as { topic: string }).topic).toBe(currentTopic);
   });
 });
+
+// ─── デュオモードゲーム進行 ───────────────────────────────────────────────────
+
+describe('デュオモードゲーム進行', () => {
+  let duoRoomCode: string;
+  let dWs1: WebSocket, dWs2: WebSocket;
+  let dUserIds: string[];
+  // turn payloads shared between tests (game state persists across sequential tests)
+  let firstTurnPayloads: [unknown, unknown];
+
+  beforeAll(async () => {
+    const res = await request(app).post('/api/rooms').set('Authorization', `Bearer ${tokens[0]}`);
+    duoRoomCode = res.body.room_code as string;
+    await request(app).post(`/api/rooms/${duoRoomCode}/join`).set('Authorization', `Bearer ${tokens[1]}`);
+
+    dUserIds = await Promise.all(
+      tokens.slice(0, 2).map(t =>
+        request(app).get('/api/auth/me').set('Authorization', `Bearer ${t}`).then(r => r.body.id as string)
+      )
+    );
+
+    dWs1 = await connectWs(tokens[0]);
+    dWs2 = await connectWs(tokens[1]);
+    await joinRoomWs([dWs1, dWs2], duoRoomCode);
+  });
+
+  afterAll(() => {
+    [dWs1, dWs2].forEach(ws => { if (ws.readyState === WebSocket.OPEN) ws.close(); });
+  });
+
+  test('ゲーム開始でgame:turn_startのペイロードにduoLevelが含まれる', async () => {
+    const [p1, p2] = await Promise.all(
+      [
+        waitForMessage(dWs1, 'game:turn_start'),
+        waitForMessage(dWs2, 'game:turn_start'),
+      ].map(async (promise, i) => {
+        if (i === 0) {
+          dWs1.send(JSON.stringify({
+            type: 'game:start',
+            payload: { roomCode: duoRoomCode, mode: 'duo', duoLevel: 1 },
+          }));
+        }
+        return promise;
+      })
+    );
+
+    firstTurnPayloads = [p1, p2];
+
+    const payload = p1 as { duoLevel: number; mode: string };
+    expect(payload.duoLevel).toBe(1);
+    expect(payload.mode).toBe('duo');
+  });
+
+  test('7問正解でgame:duo_clearを受信する', async () => {
+    let [tp1, tp2] = firstTurnPayloads;
+
+    for (let turn = 0; turn < 7; turn++) {
+      // 描き役を特定してお題を取得する
+      const drawerIsUser0 = (tp1 as { drawerId: string }).drawerId === dUserIds[0];
+      const topic = drawerIsUser0
+        ? (tp1 as { topic?: string }).topic!
+        : (tp2 as { topic?: string }).topic!;
+      const answererWs = drawerIsUser0 ? dWs2 : dWs1;
+
+      const turnEndPromise = waitForMessage(dWs1, 'game:turn_end', 5000);
+      answererWs.send(JSON.stringify({ type: 'answer:submit', payload: { roomCode: duoRoomCode, answer: topic } }));
+      const turnEnd = await turnEndPromise as { duoCorrectCount: number };
+      expect(turnEnd.duoCorrectCount).toBe(turn + 1);
+
+      if (turn < 6) {
+        // 次のターン開始（サーバーが2秒後にstartTurnする）を待つ
+        const [newTp1, newTp2] = await Promise.all([
+          waitForMessage(dWs1, 'game:turn_start', 5000),
+          waitForMessage(dWs2, 'game:turn_start', 5000),
+        ]);
+        [tp1, tp2] = [newTp1, newTp2];
+      }
+    }
+
+    // endDuoClear が2秒後にgame:duo_clearをブロードキャストする
+    const clearPayload = await waitForMessage(dWs1, 'game:duo_clear', 5000) as { level: number; timeLeft: number };
+    expect(clearPayload.level).toBe(1);
+    expect(typeof clearPayload.timeLeft).toBe('number');
+  }, 30000);
+});

@@ -31,12 +31,12 @@ describe('Register ページ', () => {
     renderRegister();
     expect(screen.getByLabelText('ユーザー名')).toBeInTheDocument();
     expect(screen.getByLabelText('パスワード')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '登録する' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '仲間になる →' })).toBeInTheDocument();
   });
 
   test('未入力で送信するとエラーが表示される', async () => {
     renderRegister();
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('ユーザー名とパスワードを入力してください');
     expect(mockedPost).not.toHaveBeenCalled();
   });
@@ -45,7 +45,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'a');
     await userEvent.type(screen.getByLabelText('パスワード'), 'pass123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('2〜20文字');
   });
 
@@ -53,7 +53,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'user name!');
     await userEvent.type(screen.getByLabelText('パスワード'), 'pass123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('英数字・アンダースコアのみ');
   });
 
@@ -61,7 +61,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'validuser');
     await userEvent.type(screen.getByLabelText('パスワード'), '123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     expect(screen.getByRole('alert')).toHaveTextContent('6文字以上');
   });
 
@@ -70,7 +70,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'newuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/login'));
   });
 
@@ -82,7 +82,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'existinguser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Username already taken'));
   });
 
@@ -91,7 +91,7 @@ describe('Register ページ', () => {
     renderRegister();
     await userEvent.type(screen.getByLabelText('ユーザー名'), 'newuser');
     await userEvent.type(screen.getByLabelText('パスワード'), 'password123');
-    await userEvent.click(screen.getByRole('button', { name: '登録する' }));
+    await userEvent.click(screen.getByRole('button', { name: '仲間になる →' }));
     expect(screen.getByRole('button', { name: '登録中...' })).toBeDisabled();
   });
 });
