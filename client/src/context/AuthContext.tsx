@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 
 export interface User {
   id: string;
@@ -86,13 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       return;
     }
-    const token = localStorage.getItem('token');
     try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/auth/logout`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/api/auth/logout');
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

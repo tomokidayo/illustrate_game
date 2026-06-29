@@ -11,6 +11,14 @@ export interface AuthedWebSocket extends WebSocket {
 export function initWsServer(server: Server): WebSocketServer {
   const wss = new WebSocketServer({ server });
 
+  // Heroku drops idle connections after 55 s (H15). Send a ping every 30 s to keep them alive.
+  const heartbeat = setInterval(() => {
+    wss.clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) client.ping();
+    });
+  }, 30000);
+  wss.on('close', () => clearInterval(heartbeat));
+
   wss.on('connection', (ws: AuthedWebSocket, req) => {
     const url = new URL(req.url!, 'http://localhost');
     const token = url.searchParams.get('token');
