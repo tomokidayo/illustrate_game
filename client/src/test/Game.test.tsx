@@ -99,17 +99,28 @@ describe('接続中フェーズ', () => {
     mockAuthUser.current = { id: 'guest_abc', username: 'test', isGuest: true };
     mockedUseGame.mockReturnValue(buildGame({
       gameStatus: 'connecting',
-      connectError: 'このユーザー名はすでに使用されています',
+      connectError: { code: 'USERNAME_CONFLICT', message: 'このユーザー名はすでに使用されています' },
     }));
     renderGame();
     expect(screen.getByRole('alert')).toHaveTextContent('このユーザー名はすでに使用されています');
     expect(screen.getByRole('button', { name: '別の名前で参加する' })).toBeInTheDocument();
   });
 
+  test('ゲストでもユーザー名重複以外のエラーは「ロビーに戻る」ボタンが表示される', () => {
+    mockAuthUser.current = { id: 'guest_abc', username: 'test', isGuest: true };
+    mockedUseGame.mockReturnValue(buildGame({
+      gameStatus: 'connecting',
+      connectError: { code: 'ROOM_NOT_FOUND', message: 'Room not found' },
+    }));
+    renderGame();
+    expect(screen.getByRole('alert')).toHaveTextContent('Room not found');
+    expect(screen.getByRole('button', { name: 'ロビーに戻る' })).toBeInTheDocument();
+  });
+
   test('その他のエラー時に「ロビーに戻る」ボタンが表示される', () => {
     mockedUseGame.mockReturnValue(buildGame({
       gameStatus: 'connecting',
-      connectError: 'Not in room',
+      connectError: { code: 'NOT_IN_ROOM', message: 'Not in room' },
     }));
     renderGame();
     expect(screen.getByRole('alert')).toHaveTextContent('Not in room');

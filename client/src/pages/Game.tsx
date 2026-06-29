@@ -80,10 +80,10 @@ export default function Game() {
 
   if (gameStatus === 'connecting') {
     if (connectError) {
-      const isNameConflict = connectError === 'このユーザー名はすでに使用されています';
+      const isNameConflict = connectError.code === 'USERNAME_CONFLICT';
       return (
         <div className="connecting-page">
-          <p className="connecting-error" role="alert">{connectError}</p>
+          <p className="connecting-error" role="alert">{connectError.message}</p>
           {user?.isGuest && isNameConflict ? (
             <button
               className="btn btn-primary"
