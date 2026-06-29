@@ -67,6 +67,7 @@ export default function Game() {
     duoCorrectCount,
     duoLevel,
     duoResult,
+    connectError,
   } = useGame(roomCode!, user!.id);
 
   function handleAbort() {
@@ -78,6 +79,27 @@ export default function Game() {
   const isDrawer = turn?.drawerId === user!.id;
 
   if (gameStatus === 'connecting') {
+    if (connectError) {
+      const isNameConflict = connectError === 'このユーザー名はすでに使用されています';
+      return (
+        <div className="connecting-page">
+          <p className="connecting-error" role="alert">{connectError}</p>
+          {user?.isGuest && isNameConflict ? (
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => navigate('/guest-username', { state: { action: 'join', roomCode } })}
+            >
+              別の名前で参加する
+            </button>
+          ) : (
+            <button className="btn btn-primary" type="button" onClick={() => navigate('/lobby')}>
+              ロビーに戻る
+            </button>
+          )}
+        </div>
+      );
+    }
     return <div className="connecting-page">接続中...</div>;
   }
 
