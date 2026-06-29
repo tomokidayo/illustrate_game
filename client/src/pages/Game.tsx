@@ -268,8 +268,9 @@ export default function Game() {
         </button>
         <div className="waiting-card">
           <div style={{ textAlign: 'center', fontSize: 32 }}>🌲</div>
-          <h1 className="waiting-title">ルーム</h1>
+          <h1 className="waiting-title">ルームコード</h1>
           <p className="waiting-code">{roomCode}</p>
+          <p className="waiting-share-hint">このコードを参加者に共有してください</p>
           <Scoreboard players={players} showScore={false} />
           <p className="waiting-hint">
             {isDuo
