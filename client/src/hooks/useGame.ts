@@ -128,6 +128,8 @@ export interface UseGameReturn {
   duoLevel: number | null;
   /** デュオモードの終了結果 */
   duoResult: DuoResult | null;
+  /** 接続フェーズで受け取ったエラー（ユーザー名重複・Not in room など） */
+  connectError: { code: string; message: string } | null;
 }
 
 let messageCounter = 0;
@@ -166,6 +168,10 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
   const [duoCorrectCount, setDuoCorrectCount] = useState(0);
   const [duoLevel, setDuoLevel] = useState<number | null>(null);
   const [duoResult, setDuoResult] = useState<DuoResult | null>(null);
+
+  const [connectError, setConnectError] = useState<{ code: string; message: string } | null>(null);
+  const gameStatusRef = useRef<GameStatus>('connecting');
+  useEffect(() => { gameStatusRef.current = gameStatus; }, [gameStatus]);
 
   const drawQueueRef = useRef<DrawData[]>([]);
 
@@ -287,7 +293,12 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
       }
 
       case 'error': {
-        addMessage({ kind: 'system', text: payload.message as string });
+        const code = (payload.code as string) ?? 'UNKNOWN';
+        const msg = payload.message as string;
+        if (gameStatusRef.current === 'connecting') {
+          setConnectError({ code, message: msg });
+        }
+        addMessage({ kind: 'system', text: msg });
         break;
       }
 
@@ -447,5 +458,6 @@ export function useGame(roomCode: string, userId: string): UseGameReturn {
     duoCorrectCount,
     duoLevel,
     duoResult,
+    connectError,
   };
 }

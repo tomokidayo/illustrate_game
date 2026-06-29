@@ -443,7 +443,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       'SELECT id, host_user_id, status FROM rooms WHERE room_code = $1',
       [roomCode]
     );
-    if (!rows[0]) { send(ws, 'error', { message: 'Room not found' }); return; }
+    if (!rows[0]) { send(ws, 'error', { code: 'ROOM_NOT_FOUND', message: 'Room not found' }); return; }
     roomId = rows[0].id;
     // host_user_id が NULL（ゲスト作成ルーム）の場合、最初に接続するユーザーをホストとする
     hostUserId = rows[0].host_user_id ?? ws.user.id;
@@ -457,7 +457,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
        WHERE r.room_code = $1 AND rp.user_id = $2`,
       [roomCode, ws.user.id]
     );
-    if (!rows[0]) { send(ws, 'error', { message: 'Not in room' }); return; }
+    if (!rows[0]) { send(ws, 'error', { code: 'NOT_IN_ROOM', message: 'Not in room' }); return; }
     roomId = rows[0].id;
     hostUserId = rows[0].host_user_id;
     status = rows[0].status;
@@ -468,14 +468,14 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
   const existingRoom = rooms.get(roomCode);
   if (existingRoom?.status === 'playing') {
     const isReconnect = existingRoom.players.some(p => p.userId === ws.user!.id);
-    if (!isReconnect) { send(ws, 'error', { message: 'Game already started' }); return; }
+    if (!isReconnect) { send(ws, 'error', { code: 'GAME_ALREADY_STARTED', message: 'Game already started' }); return; }
   }
 
   if (existingRoom) {
     // 再接続でない場合の満員チェック（登録ユーザー・ゲスト合計）
     const isRejoining = existingRoom.players.some(p => p.userId === ws.user!.id);
     if (!isRejoining && existingRoom.players.length >= 6) {
-      send(ws, 'error', { message: 'ルームが満員です' });
+      send(ws, 'error', { code: 'ROOM_FULL', message: 'ルームが満員です' });
       return;
     }
 
@@ -484,7 +484,7 @@ async function handleRoomJoin(ws: AuthedWebSocket, payload: Record<string, unkno
       p => p.username === ws.user!.username && p.userId !== ws.user!.id
     );
     if (duplicate) {
-      send(ws, 'error', { message: 'このユーザー名はすでに使用されています' });
+      send(ws, 'error', { code: 'USERNAME_CONFLICT', message: 'このユーザー名はすでに使用されています' });
       return;
     }
   }
@@ -544,15 +544,15 @@ const VALID_TURN_DURATIONS = [30, 45, 60] as const;
 function handleGameStart(ws: AuthedWebSocket, payload: Record<string, unknown>): void {
   const room = rooms.get(payload.roomCode as string);
   if (!room || !ws.user) return;
-  if (room.hostUserId !== ws.user.id) { send(ws, 'error', { message: 'Only host can start' }); return; }
-  if (room.status !== 'waiting') { send(ws, 'error', { message: 'Game already started' }); return; }
+  if (room.hostUserId !== ws.user.id) { send(ws, 'error', { code: 'NOT_HOST', message: 'Only host can start' }); return; }
+  if (room.status !== 'waiting') { send(ws, 'error', { code: 'GAME_ALREADY_STARTED', message: 'Game already started' }); return; }
 
   const mode = (payload.mode as 'normal' | 'werewolf' | 'duo') ?? 'normal';
 
   if (mode === 'duo') {
-    if (room.players.length !== 2) { send(ws, 'error', { message: 'デュオモードは2名専用です' }); return; }
+    if (room.players.length !== 2) { send(ws, 'error', { code: 'DUO_PLAYERS_REQUIRED', message: 'デュオモードは2名専用です' }); return; }
   } else {
-    if (room.players.length < 3) { send(ws, 'error', { message: 'Need at least 3 players' }); return; }
+    if (room.players.length < 3) { send(ws, 'error', { code: 'MIN_PLAYERS', message: 'Need at least 3 players' }); return; }
   }
 
   let gameDuration: number;

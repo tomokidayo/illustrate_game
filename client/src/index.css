@@ -1135,6 +1135,17 @@ a:hover { text-decoration: underline; }
   gap: 10px;
 }
 
+.connecting-error {
+  color: var(--danger, #e53935);
+  font-size: 15px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.connecting-page:has(.connecting-error) {
+  flex-direction: column;
+}
+
 /* ── Rules page ───────────────────────────────────────────────── */
 .rules-page {
   min-height: 100svh;
